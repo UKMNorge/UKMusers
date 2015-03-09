@@ -1,0 +1,34 @@
+{% extends "layout.twig.html" %}
+
+{% block content %}
+<h3>Nettredaksjonsbrukere</h3>
+<p class="lead">Alle nettredaksjons- og filmdeltakere får automatisk bruker. Ingen blir varslet om dette, så arrangøren må selv distribuere passordene</p>
+
+<table class="table table-striped">
+	{% for user in users %}
+	<tr>
+		<td class="col-xs-12 col-sm-8 col-md-3">
+			<h4>{{ user.firstname }} {{ user.lastname }}</h4>
+		</td>
+		<td class="col-xs-12 col-sm-4 col-md-3">
+			<strong>{{ user.username }}</strong>
+			<br />
+			{{ user.password }}
+		</td>
+		<td class="hidden-xs col-sm-12 col-md-6">
+			{{ user.email }}
+		</td>
+	</tr>
+	{% else %}
+	<tr class="alert alert-info">
+		<td>
+			<h4>Det er ikke lagt til noen nettredaksjonsbrukere enda.</h4>
+			<p>
+				Kan det være fordi du ikke har noen påmeldte til nettredaksjon eller film?
+				Hvis du har påmeldte men ingen brukere, <a href="mailto:support@ukm.no">kontakt support</a>
+			</p>
+		</td>
+	</tr>
+	{% endfor %}
+</table>
+{% endblock %}
