@@ -36,7 +36,9 @@ function UKMusers() {
 			echo TWIG('arrangor.twig.html', $TWIGdata, dirname(__FILE__));
 			break;
 		default:
+			require_once('controller/home.controller.php');
 			echo TWIG('home.twig.html', $TWIGdata, dirname(__FILE__));
+			break;
 	}
 }
 

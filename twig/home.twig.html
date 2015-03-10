@@ -1,10 +1,56 @@
 {% extends "layout.twig.html" %}
 
 {% block content %}
-<h3>Info</h3>
-
-<h3>Nettredaktør(er)</h3>
-<p class="lead">Utnevn noen til nettredaktør</p>
-<p>Vanlige nettredaksjonsbrukere har kun tilgang til å laste opp film og bilder, skrive saker, men ikke publisere saker. Til dette trenger du én eller flere nettredaktører.</p>
-<p>I listen nedenfor kan du se hvem som er dine nettredaktører, eller forfremme en annen bruker til å være nettredaktør</p>
+<div class="UKMwidth">
+		<h3>Info</h3>
+	<p class="lead">Del kun ut de brukernavnene du trenger</p>
+	<p>
+		Det er ingen vits i å dele ut disse brukernavnene hvis deltakerne ikke skal benytte de.
+		Spesielt gjelder dette arrangør-deltakerne, som har full tilgang til arrangørsystemet med sine brukere.
+		Tenk derfor over det før du deler ut brukernavnene
+	</p>
+	
+	<h3>Nettredaktør(er)</h3>
+	<p class="lead">Utnevn noen til nettredaktør</p>
+	<p>Vanlige nettredaksjonsbrukere har kun tilgang til å laste opp film og bilder, skrive saker, men ikke publisere saker. Til dette trenger du én eller flere nettredaktører.</p>
+	<p>I listen nedenfor kan du se hvem som er dine nettredaktører, eller forfremme en annen bruker til å være nettredaktør</p>
+	
+	
+	<p>
+		<form method="POST">
+			<select name="promote">
+				<option value="0" disabled="disabled" selected="selected">Velg bruker som skal oppgraderes til nettredaktør</option>
+				{% for user in users %}
+					<option value="{{ user.wp_id }}">{{ user.firstname }} {{ user.lastname }}</option>
+				{% endfor %}
+			</select>
+			<button class="btn btn-success btn-md">Legg til ny nettredaktør</button>
+		</form>
+	</p>
+	
+	<table class="table table-striped">
+		{% for user in editors %}
+		<tr>
+			<td class="col-xs-12 col-sm-8 col-md-3">
+				<h4>{{ user.firstname }} {{ user.lastname }}</h4>
+			</td>
+			<td class="col-xs-12 col-sm-4 col-md-3">
+				<strong>{{ user.username }}</strong>
+				<br />
+				{{ user.password }}
+			</td>
+			<td class="hidden-xs col-sm-12 col-md-6">
+				{{ user.email }}
+			</td>
+		</tr>
+		{% else %}
+		<tr class="alert alert-info">
+			<td>
+				<h4>Det er ikke lagt til noen nettredaktører enda.</h4>
+			</td>
+		</tr>
+		{% endfor %}
+	</table>
+	
+</div>	
 {% endblock %}
