@@ -19,6 +19,13 @@ foreach($innslag as $band_type => $bands) {
 			foreach( $deltakere as $deltaker ) {
 				$user = new UKMuser( $deltaker, 'nettredaksjon' );
 				$user->wp_user_create();
+				
+				if( isset( $_GET['upgrade'] ) && $user->wp_id == $_GET['upgrade'] ) {
+					$user->upgrade();
+				}
+				if( isset( $_GET['downgrade'] ) && $user->wp_id == $_GET['downgrade'] ) {
+					$user->downgrade();
+				}
 				$TWIGdata['users'][ $user->firstname .' '. $user->lastname ] = $user;
 			}
 		}

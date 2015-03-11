@@ -158,6 +158,26 @@ class UKMuser {
 				$this->wp_role = 'subscriber';
 				break;
 		}
+		
+		$user_id = $this->wp_username_exists( $this->username );
+		if( $user_id ) {
+			$user_data = get_userdata( $user_id );
+			$role = $user_data->roles[0];
+			$this->wp_role = $role;
+		}
+	}
+	
+	public function upgrade( ) {
+		if( $this->type == 'nettredaksjon' ) {
+			$this->wp_role = 'author';
+		}
+		$this->_doWP_add_to_blog();
+	}
+	public function downgrade( ) {
+		if( $this->type == 'nettredaksjon' ) {
+			$this->wp_role = 'contributor';
+		}
+		$this->_doWP_add_to_blog();
 	}
 	
 	private function _doWP_user_update() {
