@@ -143,7 +143,7 @@ class UKMuser {
 	
 	private function _doWP_add_to_blog() {
 		global $blog_id;
-		add_user_to_blog( $blog_id, $this->wp_user_id, $this->wp_role );
+		add_user_to_blog( $blog_id, $this->wp_id, $this->wp_role );
 	}
 	
 	private function _wp_role() {
