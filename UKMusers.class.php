@@ -152,7 +152,7 @@ class UKMuser {
 				$this->wp_role = 'contributor';
 				break;
 			case 'arrangor':
-				$this->wp_role = 'editor';
+				$this->wp_role = 'ukm_produsent';
 				break;
 			default:
 				$this->wp_role = 'subscriber';
@@ -168,14 +168,24 @@ class UKMuser {
 	}
 	
 	public function upgrade( ) {
-		if( $this->type == 'nettredaksjon' ) {
-			$this->wp_role = 'author';
+		switch( $this->type ) {
+			case 'nettredaksjon':
+				$this->wp_role = 'author';
+				break;
+			case 'arrangor':
+				$this->wp_role = 'editor';
+				break;
 		}
 		$this->_doWP_add_to_blog();
 	}
 	public function downgrade( ) {
-		if( $this->type == 'nettredaksjon' ) {
-			$this->wp_role = 'contributor';
+		switch( $this->type ) {
+			case 'nettredaksjon':
+				$this->wp_role = 'contributor';
+				break;
+			case 'arrangor':
+				$this->wp_role = 'ukm_produsent';
+				break;
 		}
 		$this->_doWP_add_to_blog();
 	}
