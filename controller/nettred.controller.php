@@ -2,6 +2,8 @@
 require_once('UKM/innslag.class.php');
 require_once('UKM/inc/password.inc.php');
 
+$site_type = get_option('site_type');
+$is_lokalmonstring = $site_type == 'kommune';
 $userErrors = array();
 
 $users = array();
@@ -13,7 +15,9 @@ foreach($innslag as $band_type => $bands) {
 		foreach($bands as $band) {
 			
 			$inn = new innslag($band['b_id']);
-			$inn->videresendte($m->g('pl_id'));
+			if( !$is_lokalmonstring ) {
+				$inn->videresendte($m->g('pl_id'));
+			}
 			$deltakere = $inn->personObjekter();
 			
 			foreach( $deltakere as $deltaker ) {
