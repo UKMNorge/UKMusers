@@ -15,7 +15,8 @@ foreach($innslag as $band_type => $bands) {
 		foreach($bands as $band) {
 			
 			$inn = new innslag($band['b_id']);
-			if( !$is_lokalmonstring ) {
+			// Hent kun videresendte på fylkesnivå
+			if( get_option('site_type') == 'fylke' ) {
 				$inn->videresendte($m->g('pl_id'));
 			}
 			$deltakere = $inn->personObjekter();
