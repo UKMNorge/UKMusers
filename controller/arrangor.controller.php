@@ -35,4 +35,6 @@ foreach($innslag as $band_type => $bands) {
 		}
 	}
 }
-ksort( $TWIGdata['users'] );
+if( is_array( $TWIGdata['users'] ) ) {
+	ksort( $TWIGdata['users'] );
+}
