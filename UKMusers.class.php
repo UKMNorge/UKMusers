@@ -116,12 +116,14 @@ class UKMuser {
 		#echo 'user: ';
 		#var_dump($user);
 		#echo '<br>';
+		// TODO: FIKS DENNE!
+		// BURDE IKKE KUN SJEKKE DETTE; MEN OGSÅ SJEKKE AT p_ID FRA deltakerObject stemmer med notert p_id
 		// Hvis vi har en bruker i tabellen
 		if ($user) {
 			// Sjekker om brukernavn finnes i WP og tilhører denne p_id
 			if ($username_exists && $this->wp_username_is_mine($this->username) ) {
 				// TRENGS IKKE? Oppdater lokalt objekt
-
+				#echo '<b>Returnerer tidlig.</b><br>';
 				// Returner ID
 				return $username_exists;
 			}
@@ -140,7 +142,7 @@ class UKMuser {
 			if ($new_p && ($new_p != $old)) {
 				// Oppdater brukeren i ukm_wp_deltakerbrukere med ny p_id
 				#echo '_updateLocalId: '.$this->_updateLocalId($old, $new_p).'<br>';
-				#$this->_updateLocalId($old, $new_p);
+				$this->_updateLocalId($old, $new_p);
 				$this->p_id = $new_p;
 				#echo '$this->p_id: '.$this->p_id.'<br>';
 				#$this->password = $this->_password();
