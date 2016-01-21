@@ -113,7 +113,9 @@ class UKMuser {
 
 		
 		$user = $this->_findUser($this->p_id);
-		#echo 'user: '.$user.'<br>';
+		#echo 'user: ';
+		#var_dump($user);
+		#echo '<br>';
 		// Hvis vi har en bruker i tabellen
 		if ($user) {
 			// Sjekker om brukernavn finnes i WP og tilhører denne p_id
@@ -138,7 +140,7 @@ class UKMuser {
 			if ($new_p && ($new_p != $old)) {
 				// Oppdater brukeren i ukm_wp_deltakerbrukere med ny p_id
 				#echo '_updateLocalId: '.$this->_updateLocalId($old, $new_p).'<br>';
-				$this->_updateLocalId($old, $new_p);
+				#$this->_updateLocalId($old, $new_p);
 				$this->p_id = $new_p;
 				#echo '$this->p_id: '.$this->p_id.'<br>';
 				#$this->password = $this->_password();
@@ -182,8 +184,10 @@ class UKMuser {
 						WHERE 	`p_firstname` = '#firstname'
 						AND 	`p_lastname` = '#lastname'
 						AND 	`p_email`	 = '#email'
+						AND 	`p_id` = '#pid'
 						ORDER BY `p_id` DESC;", 
-						array(	'firstname' => $this->firstname, 
+						array(	'pid' => $this->p_id,
+								'firstname' => $this->firstname, 
 								'lastname'=> $this->lastname,
 								'email' => $this->email) 
 						);
@@ -307,7 +311,7 @@ class UKMuser {
 		$sql->add('wp_id', $this->wp_id);
 		
 		#echo $sql->debug();
-		return $sql->run();
+		$sql->run();
 
 	}
 }
