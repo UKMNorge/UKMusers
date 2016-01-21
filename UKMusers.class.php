@@ -30,6 +30,7 @@ class UKMuser {
 						  'username' => $this->username,
 						  'pid' => $this->p_id)
 					);
+		#echo $sql->debug();
 		$this->password = $sql->run('field','password');
 	}
 	
@@ -97,36 +98,128 @@ class UKMuser {
 	}
 	
 	public function wp_user_create( ) {
-#		echo '<h3>create: '. $this->username .' </h3>';
+		#echo '<h3>create: '. $this->username .' </h3>';
 		$username_exists = $this->wp_username_exists( $this->username );
+
 		$useremail_exists= $this->wp_email_exists( $this->email );
 
-		// Returner brukerID hvis brukernavn finnes, og det tilhører denne P_ID
-		// Finn neste ledige brukernavn hvis dette er tatt
-		if( $username_exists ) {
-			$test_username_count = 0;
-			while( $username_exists && !$this->wp_username_is_mine( $this->username ) ) {
-				$test_username_count++;
-				$username_exists = $this->wp_username_exists( $this->username . $test_username_count );
-			}
-			if( $username_exists ) {
-				$this->wp_id = $username_exists;
-				$this->_doWP_user_update();
+		// echo '<br>Feilsøking for bruker: '.$this->username.'<br>';
+		// var_dump($this);
+		// echo '<br>username_exists: '.$username_exists.'<br>';
+		// echo 'useremail_exists: '.$useremail_exists.'<br>';
+		// echo 'wp_username_is_mine '.$this->wp_username_is_mine($this->username).'<br>';
+		// echo 'wp_useremail_is_mine '.$this->wp_useremail_is_mine($this->email).'<br>';
+		// echo 'p_id: '.$this->p_id.'<br>';
+
+		
+		$user = $this->_findUser($this->p_id);
+		#echo 'user: '.$user.'<br>';
+		// Hvis vi har en bruker i tabellen
+		if ($user) {
+			// Sjekker om brukernavn finnes i WP og tilhører denne p_id
+			if ($username_exists && $this->wp_username_is_mine($this->username) ) {
+				// TRENGS IKKE? Oppdater lokalt objekt
+
+				// Returner ID
 				return $username_exists;
 			}
+		}
+		// Dersom bruker-iden ikke finnes i databasen, men brukernavnet og e-posten  gjør det:
+		$old = $this->_checkForUser();
+		$this->password = $this->_checkForUser('password');
+		#echo 'old: '.$old.'<br>';
+		$this->wp_id = $username_exists;
+		if ($old) {
+			#echo '<b>Brukerdata finnes, men ikke ID</b><br>';
+			// Hent ny ID
+			$new_p = $this->_checkSmartForUser();
+			#echo 'new_p: '.$new_p.'<br>';
+			// Dersom brukeren har ny ID
+			if ($new_p && ($new_p != $old)) {
+				// Oppdater brukeren i ukm_wp_deltakerbrukere med ny p_id
+				#echo '_updateLocalId: '.$this->_updateLocalId($old, $new_p).'<br>';
+				$this->_updateLocalId($old, $new_p);
+				$this->p_id = $new_p;
+				#echo '$this->p_id: '.$this->p_id.'<br>';
+				#$this->password = $this->_password();
+				#echo '$this->password: '.$this->password.'<br>';
 
-			$this->username .= $test_username_count;
+				// Gjennomfør WP-update
+				$this->_doWP_user_update();
+				return $this->wp_id;
+			}
 		}
 		
-		if( $useremail_exists && $this->wp_useremail_is_mine() ) {
-			echo 'E-postadressen finnes, og tilhører brukeren <br />';
-			return $useremail_exists;
-		}
+
+		// // Returner brukerID hvis brukernavn finnes, og det tilhører denne P_ID
+		// // Finn neste ledige brukernavn hvis dette er tatt
+		// if( $username_exists ) {
+		// 	$test_username_count = 0;
+		// 	while( $username_exists && !$this->wp_username_is_mine( $this->username ) ) {
+		// 		$test_username_count++;
+		// 		$username_exists = $this->wp_username_exists( $this->username . $test_username_count );
+		// 	}
+		// 	if( $username_exists ) {
+		// 		$this->wp_id = $username_exists;
+		// 		$this->_doWP_user_update();
+		// 		return $username_exists;
+		// 	}
+
+		// 	$this->username .= $test_username_count;
+		// }
 		
+		// if( $useremail_exists && $this->wp_useremail_is_mine() ) {
+		// 	echo 'E-postadressen finnes. og tilhører denne brukeren.<br />';
+		// 	return $useremail_exists;
+		// }
 		
+		// Brukerdata finnes ikke i tabellen, så opprett ny rad
 		$this->_doWP_user_create( );
 	}
-	
+
+	private function _checkSmartForUser() {
+		$qry = new SQL("SELECT `p_id` FROM  `smartukm_participant` 
+						WHERE 	`p_firstname` = '#firstname'
+						AND 	`p_lastname` = '#lastname'
+						AND 	`p_email`	 = '#email'
+						ORDER BY `p_id` DESC;", 
+						array(	'firstname' => $this->firstname, 
+								'lastname'=> $this->lastname,
+								'email' => $this->email) 
+						);
+		#echo $qry->debug();
+		return $qry->run('field', 'p_id');
+	}
+	private function _checkForUser($field = 'p_id') {
+		$qry = new SQL("SELECT `#field` FROM  `#table` 
+						WHERE 	`username` = '#username'
+						AND 	`email` = '#email';", 
+					array( 	'field' => $field,
+							'table' => $this->table,
+							'username' => $this->username, 	
+							'email' => $this->email) 
+						);
+		#echo $qry->debug();
+		return $qry->run('field', $field);
+	}
+
+	private function _findUser($p_id) {
+		$qry = new SQL("SELECT * FROM `#table`
+						WHERE 	`p_id` = '#pid';",
+						array(	'table' => $this->table,
+								'pid' => $p_id) 
+					);
+		#echo $qry->debug();
+		return $qry->run('array');
+	}
+
+	private function _updateLocalId($old, $new) {
+		$qry = new SQLins($this->table, array('p_id' => $old));
+		$qry->add('p_id', $new);
+		#echo $qry->debug();
+		return $res = $qry->run();
+	}
+
 	private function _doWP_user_create( ) {
 		$this->password = UKM_ordpass();
 		$wp_user_id = wp_create_user( $this->username, $this->password, $this->email );
@@ -213,7 +306,8 @@ class UKMuser {
 		$sql->add('password', $this->password);
 		$sql->add('wp_id', $this->wp_id);
 		
-		$sql->run();
+		#echo $sql->debug();
+		return $sql->run();
 
 	}
 }
