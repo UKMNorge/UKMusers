@@ -20,7 +20,7 @@ foreach($innslag as $band_type => $bands) {
 				$inn->videresendte($m->g('pl_id'));
 			}
 			$deltakere = $inn->personObjekter();
-			var_dump($deltakere);
+			#var_dump($deltakere);
 			foreach( $deltakere as $deltaker ) {
 				$user = new UKMuser( $deltaker, 'nettredaksjon' );
 				$user->wp_user_create();
