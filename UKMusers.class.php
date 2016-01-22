@@ -127,7 +127,7 @@ class UKMuser {
 			// Sjekker om brukernavn finnes i WP og tilhører denne p_id
 			if ($username_exists && $this->wp_username_is_mine($this->username) ) {
 				// TRENGS IKKE? Oppdater lokalt objekt
-				#echo '<b>Returnerer tidlig.</b><br>';
+				echo '<b>Ting funker, returnerer tidlig.</b><br>';
 				// Returner ID
 				return $username_exists;
 			}
@@ -140,16 +140,19 @@ class UKMuser {
 		$this->wp_id = $username_exists;
 		if ($old) {
 			if(is_super_admin() )
-				echo '<b>Brukerdata finnes, men ikke ID</b><br>';
+				echo '<b>Brukerdata finnes i tabellen.</b><br>';
 			// Hent ny ID
-			$new_p = $this->_checkSmartForUser();
+			$new_p = $this->p_id;
+			//$new_p = $this->_checkSmartForUser();
 			if(is_super_admin() )
 				echo 'new_p: '.$new_p.'<br>';
 			// Dersom brukeren har ny ID
 			if ($new_p && ($new_p != $old)) {
 				// Oppdater brukeren i ukm_wp_deltakerbrukere med ny p_id
-				if(is_super_admin() )
+				if(is_super_admin() ) {
+					echo '<b>Bruker-ID i tabellen er utdatert.</b><br>';
 					echo '_updateLocalId: '.$this->_updateLocalId($old, $new_p).'<br>';
+				}
 				#$this->_updateLocalId($old, $new_p);
 				$this->p_id = $new_p;
 				if(is_super_admin() )
@@ -162,8 +165,19 @@ class UKMuser {
 				$this->_doWP_user_update();
 				return $this->wp_id;
 			}
+			else {
+				// Brukeren har samme ID, men finnes ikke i WP
+				if (is_super_admin() ) 
+					echo '<b>Brukeren har samme ID, men finnes ikke i WP. Kjører _doWP_user_create()</b><br>';
+				$this->_doWP_user_create();
+
+				return $this->wp_id;
+			}
 		}
-		
+		// Brukerdata finnes ikke i tabellen eller WP, så opprett ny rad begge steder
+		if (is_super_admin() ) 
+			echo 'Kjører _doWP_user_create()<br>';
+		$this->_doWP_user_create( );
 
 		// // Returner brukerID hvis brukernavn finnes, og det tilhører denne P_ID
 		// // Finn neste ledige brukernavn hvis dette er tatt
@@ -187,8 +201,7 @@ class UKMuser {
 		// 	return $useremail_exists;
 		// }
 		
-		// Brukerdata finnes ikke i tabellen, så opprett ny rad
-		$this->_doWP_user_create( );
+		
 	}
 
 	private function _checkSmartForUser() {
@@ -240,8 +253,10 @@ class UKMuser {
 		return $res = $qry->run();
 	}
 
-	private function _doWP_user_create( ) {
-		$this->password = UKM_ordpass();
+	private function _doWP_user_create($password = null) {
+		if (!$password) 
+			$this->password = UKM_ordpass();
+
 		$wp_user_id = wp_create_user( $this->username, $this->password, $this->email );
 		
 		// IF IS ERROR
@@ -249,6 +264,8 @@ class UKMuser {
 			USER_CREATE_ERROR( $wp_user_id );
 			return ;
 		}
+		if (is_super_admin() ) 
+			echo 'Setter wp_id og legger brukeren til bloggen<br>';
 		$this->wp_id = $wp_user_id;
 		$this->_doWP_add_to_blog();
 		$this->_doWP_user_update();
