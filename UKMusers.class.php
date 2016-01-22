@@ -5,6 +5,7 @@ class UKMuser {
 
 	public function __construct( $deltakerObject, $type ) {
 		$deltakerObject->loadGEO();
+		$this->deltakerObject = $deltakerObject;
 		$this->type = $type;
 
 		$this->p_id = $deltakerObject->get('p_id');
@@ -77,9 +78,44 @@ class UKMuser {
 			if( $wp_user_participant_id == $this->p_id ) {
 				return true;
 			}
+			if (is_super_admin() && $this->debug )
+				echo '<b>Brukernavnet finnes, men tilhører ikke denne brukeren.</b><br>';
+			return false;
 		}
+		if (is_super_admin() && $this->debug )
+			echo '<b>Brukernavnet finnes ikke.</b><br>';
 		return false;
 	}
+
+	// public function wp_username_is_mine() {
+	//     $wp_user_id = $this->wp_username_exists( $this->username );
+
+	//     if( $wp_user_id ) {
+	//         $wp_user_participant_id = get_user_meta( $wp_user_id, 'p_id', true );
+	//         if( $wp_user_participant_id == $this->p_id ) {
+	//             return true;
+	//         }
+
+	//         $sql = new SQL("SELECT `p_id` FROM `smartukm_participant`
+	//                         WHERE `p_firstname` = '#firstname'
+	//                         AND `p_lastname` = '#lastname'
+	//                         AND `p_email` = '#email'
+	//                         ORDER BY `p_id` DESC",
+	//                         array(  'firstname' => $this->deltakerObject->get('p_firstname'),
+	//                                 'lastname' => $this->deltakerObject->get('p_lastname'),
+	//                                 'email' => $this->deltakerObject->get('p_email'));
+	//         $res = $sql->run();
+	//         if( $res ) {
+	//             while( $r = mysql_fetch_assoc( $res ) ) {
+	//                 if( $r['p_id'] == $wp_user_participant_id ) {
+	//                     $this->_wp_set_new_p_id( $this->p_id );
+	//                     return true;
+	//                 }
+	//             }
+	//         }
+	//     }
+	//     return false;
+	// }
 	
 	public function wp_email_exists( $email ) {
 		return email_exists( $email );
@@ -124,6 +160,9 @@ class UKMuser {
 		// echo 'wp_useremail_is_mine '.$this->wp_useremail_is_mine($this->email).'<br>';
 		// echo 'p_id: '.$this->p_id.'<br>';
 
+		if (!$username_exists && $useremail_exists) {
+			// E-post finnes i WP, men brukernavnet gjør det ikke
+		}
 		
 		$user = $this->_findUser($this->p_id);
 		$this->password = $this->_checkForUser('password');
@@ -230,9 +269,10 @@ class UKMuser {
 		// 	echo 'E-postadressen finnes. og tilhører denne brukeren.<br />';
 		// 	return $useremail_exists;
 		// }
-		
-		
+	
 	}
+
+	
 
 	private function _checkSmartForUser() {
 		$qry = new SQL("SELECT `p_id` FROM  `smartukm_participant` 
@@ -292,6 +332,9 @@ class UKMuser {
 		// IF IS ERROR
 		if( is_object( $wp_user_id ) ) {
 			USER_CREATE_ERROR( $wp_user_id );
+			if(is_super_admin() && $this->debug ) {
+				echo '<b>FAILED TO CREATE USER</b><br>';
+			}
 			return ;
 		}
 		// if (is_super_admin() ) 
