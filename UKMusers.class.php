@@ -102,12 +102,9 @@ class UKMuser {
 		global $blog_id;
 		if (!is_user_member_of_blog($blog_id, $wp_id)) {
 			if (is_super_admin() && $this->debug) {
-				echo '<b>Bruker er ikke medlem av rett blogg, legger den til.</b><br>';
-				echo 'ID: '.$this->wp_id.'<br>';
-				echo 'Role: '.$this->wp_role.'<br>';
-				echo 'Blogg-ID: '.$blog_id.'<br>';
+				echo '<b>Bruker er ikke medlem av rett blogg.</b><br>';
 			}
-			add_user_to_blog($blog_id, $wp_id, $this->wp_role);
+			return false;
 		}
 		return $blog_id;
 	}
@@ -137,8 +134,18 @@ class UKMuser {
 		}
 		
 		// Sørg for at brukeren har rettigheter til denne bloggen
-		$this->wp_user_is_member_of_blog($this->wp_id);
+		$blog = $this->wp_user_is_member_of_blog($this->wp_id);
 
+		if (!$blog) {
+			$this->_wp_role();
+			if (is_super_admin() && $this->debug ) {
+				echo 'ID: '.$this->wp_id.'<br>';
+				echo 'Role: '.$this->wp_role.'<br>';
+				echo 'Blogg-ID: '.$blog_id.'<br>';
+			}
+			$this->_doWP_add_to_blog();
+			// add_user_to_blog($blog_id, $wp_id, $this->wp_role);
+		}
 		// TODO: FIKS DENNE!
 		// BURDE IKKE KUN SJEKKE DETTE; MEN OGSÅ SJEKKE AT p_ID FRA deltakerObject stemmer med notert p_id
 		// Hvis vi har en bruker i tabellen
@@ -293,6 +300,8 @@ class UKMuser {
 	
 	private function _doWP_add_to_blog() {
 		global $blog_id;
+		// Oppdater wp_role
+		$this->_wp_role();
 		$add = add_user_to_blog( $blog_id, $this->wp_id, $this->wp_role );
 		if(is_super_admin() && $this->debug ) {
 			if ($add === true) {
@@ -302,6 +311,9 @@ class UKMuser {
 				echo 'Feilet å legge til brukeren til blogg '.$blog_id.'<br>';		
 				var_dump($add);	
 				echo '<br>';
+			}
+			else {
+				echo '<b>Ukjent feil!</b><br>';
 			}
 		}
 
@@ -364,17 +376,20 @@ class UKMuser {
 		wp_update_user( array('ID' => $this->wp_id, 'description' => $this->description, 'role' => $this->wp_role ));
 		
 		if (!is_user_member_of_blog($this->wp_id, $blog_id) ) {
-			$add = add_user_to_blog($blog_id, $this->wp_id, $this->wp_role);
-			if(is_super_admin() && $this->debug ) {
-				if ($add === true) {
-					echo 'Lagt brukeren til blogg '.$blog_id.'<br>';
-				}
-				elseif (get_class($add) == 'WP_Error') {
-					echo 'Feilet å legge til brukeren til blogg '.$blog_id.'<br>';		
-					var_dump($add);	
-					echo '<br>';
-				}
-			}
+			// Burde også sjekke at rettigheter stemmer
+			$this->_doWP_add_to_blog();
+
+			// $add = add_user_to_blog($blog_id, $this->wp_id, $this->wp_role);
+			// if(is_super_admin() && $this->debug ) {
+			// 	if ($add === true) {
+			// 		echo 'Lagt brukeren til blogg '.$blog_id.'<br>';
+			// 	}
+			// 	elseif (get_class($add) == 'WP_Error') {
+			// 		echo 'Feilet å legge til brukeren til blogg '.$blog_id.'<br>';		
+			// 		var_dump($add);	
+			// 		echo '<br>';
+			// 	}
+			// }
 		}
 
 		$test = new SQL("SELECT `p_id` FROM `#table` WHERE `p_id` = '#pid'", array('table'=>$this->table, 'pid'=>$this->p_id));
