@@ -172,30 +172,25 @@ class UKMuser {
 			echo '<br>';
 		}
 		
-		// Sørg for at brukeren har rettigheter til denne bloggen
-		$blog = $this->wp_user_is_member_of_blog($this->wp_id);
-
-		if (!$blog) {
-			if (!$this->wp_id) {
-				// Opprett en Wordpress-bruker
-				$this->_doWP_user_create($this->password);
-			}
-			// Dette SKAL oppdatere $this->wp_role, men det skjer ikke alltid??
-			$this->_wp_role();
-			if (is_super_admin() && $this->debug ) {
-				global $blog_id;
-				echo 'Type: '.$this->type.'<br>';
-				echo 'ID: '.$this->wp_id.'<br>';
-				echo 'Role: '.$this->wp_role.'<br>';
-				echo 'Blogg-ID: '.$blog_id.'<br>';
-			}
-			$this->_doWP_add_to_blog();
-			// add_user_to_blog($blog_id, $wp_id, $this->wp_role);
-		}
 		// TODO: FIKS DENNE!
 		// BURDE IKKE KUN SJEKKE DETTE; MEN OGSÅ SJEKKE AT p_ID FRA deltakerObject stemmer med notert p_id
 		// Hvis vi har en bruker i tabellen
 		if ($user) {
+			// Sørg for at brukeren har rettigheter til denne bloggen
+			$blog = $this->wp_user_is_member_of_blog($this->wp_id);
+			if (!$blog) {
+				// Dette SKAL oppdatere $this->wp_role, men det skjer ikke alltid??
+				$this->_wp_role();
+				if (is_super_admin() && $this->debug ) {
+					global $blog_id;
+					echo 'Type: '.$this->type.'<br>';
+					echo 'ID: '.$this->wp_id.'<br>';
+					echo 'Role: '.$this->wp_role.'<br>';
+					echo 'Blogg-ID: '.$blog_id.'<br>';
+				}
+				$this->_doWP_add_to_blog();
+				// add_user_to_blog($blog_id, $wp_id, $this->wp_role);
+			}
 			// Sjekker om brukernavn finnes i WP og tilhører denne p_id
 			if ($username_exists && $this->wp_username_is_mine($this->username) ) {
 				// TRENGS IKKE? Oppdater lokalt objekt
@@ -205,12 +200,11 @@ class UKMuser {
 				return $username_exists;
 			}
 		}
-		// Dersom bruker-iden ikke finnes i databasen, men brukernavnet og e-posten  gjør det:
+		// Dersom bruker-iden ikke finnes i databasen, men brukernavnet og e-posten gjør det:
 		$old = $this->_checkForUser();
 		// $this->password = $this->_checkForUser('password');
 		if (is_super_admin() && $this->debug )
 			echo 'old: '.$old.'<br>';
-		
 		if ($old) {
 			if (is_super_admin() && $this->debug )
 				echo '<b>Brukerdata finnes i tabellen.</b><br>';
