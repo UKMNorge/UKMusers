@@ -303,7 +303,7 @@ class UKMuser {
 	
 	private function _doWP_add_to_blog() {
 		global $blog_id;
-		// Oppdater wp_role
+		// Oppdater $this->wp_role
 		$this->_wp_role();
 		$add = add_user_to_blog( $blog_id, $this->wp_id, $this->wp_role );
 		if(is_super_admin() && $this->debug ) {
@@ -339,6 +339,13 @@ class UKMuser {
 		if( $user_id ) {
 			$user_data = get_userdata( $user_id );
 			$role = $user_data->roles[0];
+			if (is_super_admin() && $this->debug ) {
+				echo 'Role in _wp_role: '.$role.'<br>';
+				var_dump($role);
+				echo '<br>';
+			}
+			if (!$role) 
+				$role = 'contributor';
 			$this->wp_role = $role;
 		}
 	}
