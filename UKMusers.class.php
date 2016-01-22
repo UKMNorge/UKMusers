@@ -1,7 +1,8 @@
 <?php
 class UKMuser {
 	var $table = 'ukm_wp_deltakerbrukere';
-	
+	var $debug = false;
+
 	public function __construct( $deltakerObject, $type ) {
 		$deltakerObject->loadGEO();
 		$this->type = $type;
@@ -98,7 +99,7 @@ class UKMuser {
 	}
 	
 	public function wp_user_create( ) {
-		if(is_super_admin() )
+		if(is_super_admin() && $this->debug )
 			echo '<h3>create: '. $this->username .' </h3>';
 		$username_exists = $this->wp_username_exists( $this->username );
 
@@ -115,7 +116,7 @@ class UKMuser {
 		
 		$user = $this->_findUser($this->p_id);
 		$this->password = $this->_checkForUser('password');
-		if(is_super_admin() ) {
+		if(is_super_admin() && $this->debug) {
 			echo 'user: ';
 			var_dump($user);
 			echo '<br>';
@@ -127,7 +128,8 @@ class UKMuser {
 			// Sjekker om brukernavn finnes i WP og tilhører denne p_id
 			if ($username_exists && $this->wp_username_is_mine($this->username) ) {
 				// TRENGS IKKE? Oppdater lokalt objekt
-				echo '<b>Ting funker, returnerer tidlig.</b><br>';
+				if (is_super_admin() && $this->debug() )
+					echo '<b>Ting funker, returnerer tidlig.</b><br>';
 				// Returner ID
 				return $username_exists;
 			}
@@ -135,30 +137,30 @@ class UKMuser {
 		// Dersom bruker-iden ikke finnes i databasen, men brukernavnet og e-posten  gjør det:
 		$old = $this->_checkForUser();
 		// $this->password = $this->_checkForUser('password');
-		if(is_super_admin() )
+		if (is_super_admin() && $this->debug() )
 			echo 'old: '.$old.'<br>';
 		$this->wp_id = $username_exists;
 		if ($old) {
-			if(is_super_admin() )
+			if (is_super_admin() && $this->debug() )
 				echo '<b>Brukerdata finnes i tabellen.</b><br>';
 			// Hent ny ID
 			$new_p = $this->p_id;
 			//$new_p = $this->_checkSmartForUser();
-			if(is_super_admin() )
+			if (is_super_admin() && $this->debug() )
 				echo 'new_p: '.$new_p.'<br>';
 			// Dersom brukeren har ny ID
 			if ($new_p && ($new_p != $old)) {
 				// Oppdater brukeren i ukm_wp_deltakerbrukere med ny p_id
-				if(is_super_admin() ) {
+				if (is_super_admin() && $this->debug() ) {
 					echo '<b>Bruker-ID i tabellen er utdatert.</b><br>';
 					echo '_updateLocalId: '.$this->_updateLocalId($old, $new_p).'<br>';
 				}
 				#$this->_updateLocalId($old, $new_p);
 				$this->p_id = $new_p;
-				if(is_super_admin() )
+				if (is_super_admin() && $this->debug() )
 					echo '$this->p_id: '.$this->p_id.'<br>';
 				#$this->password = $this->_password();
-				if(is_super_admin() )
+				if (is_super_admin() && $this->debug() )
 					echo '$this->password: '.$this->password.'<br>';
 
 				// Gjennomfør WP-update
@@ -167,7 +169,7 @@ class UKMuser {
 			}
 			else {
 				// Brukeren har samme ID, men finnes ikke i WP
-				if (is_super_admin() ) 
+				if (is_super_admin() && $this->debug() )
 					echo '<b>Brukeren har samme ID, men finnes ikke i WP. Kjører _doWP_user_create()</b><br>';
 				$this->_doWP_user_create();
 
@@ -175,7 +177,7 @@ class UKMuser {
 			}
 		}
 		// Brukerdata finnes ikke i tabellen eller WP, så opprett ny rad begge steder
-		if (is_super_admin() ) 
+		if (is_super_admin() && $this->debug() )
 			echo 'Kjører _doWP_user_create()<br>';
 		$this->_doWP_user_create( );
 
@@ -216,7 +218,7 @@ class UKMuser {
 								'lastname'=> $this->lastname,
 								'email' => $this->email) 
 						);
-		if(is_super_admin() )
+		if (is_super_admin() && $this->debug() )
 			echo $qry->debug();
 		return $qry->run('field', 'p_id');
 	}
@@ -229,7 +231,7 @@ class UKMuser {
 							'username' => $this->username, 	
 							'email' => $this->email) 
 						);
-		if(is_super_admin() )
+		if (is_super_admin() && $this->debug() )
 			echo $qry->debug();
 		return $qry->run('field', $field);
 	}
@@ -240,7 +242,7 @@ class UKMuser {
 						array(	'table' => $this->table,
 								'pid' => $p_id) 
 					);
-		if(is_super_admin() )
+		if (is_super_admin() && $this->debug() )
 			echo $qry->debug();
 		return $qry->run('array');
 	}
@@ -248,7 +250,7 @@ class UKMuser {
 	private function _updateLocalId($old, $new) {
 		$qry = new SQLins($this->table, array('p_id' => $old));
 		$qry->add('p_id', $new);
-		if(is_super_admin() )
+		if (is_super_admin() && $this->debug() )
 			echo $qry->debug();
 		return $res = $qry->run();
 	}
@@ -264,8 +266,8 @@ class UKMuser {
 			USER_CREATE_ERROR( $wp_user_id );
 			return ;
 		}
-		if (is_super_admin() ) 
-			echo 'Setter wp_id og legger brukeren til bloggen<br>';
+		// if (is_super_admin() ) 
+		// 	echo 'Setter wp_id og legger brukeren til bloggen<br>';
 		$this->wp_id = $wp_user_id;
 		$this->_doWP_add_to_blog();
 		$this->_doWP_user_update();
@@ -343,7 +345,7 @@ class UKMuser {
 		$sql->add('password', $this->password);
 		$sql->add('wp_id', $this->wp_id);
 		
-		if(is_super_admin() )
+		if (is_super_admin() && $this->debug() )
 			echo $sql->debug();
 		$sql->run();
 
