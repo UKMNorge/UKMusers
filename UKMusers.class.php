@@ -1,7 +1,7 @@
 <?php
 class UKMuser {
 	var $table = 'ukm_wp_deltakerbrukere';
-	var $debug = debug;
+	var $debug = false;
 
 	public function __construct( $deltakerObject, $type ) {
 		$deltakerObject->loadGEO();
