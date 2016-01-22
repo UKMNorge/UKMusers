@@ -137,8 +137,11 @@ class UKMuser {
 		$blog = $this->wp_user_is_member_of_blog($this->wp_id);
 
 		if (!$blog) {
+			// Dette SKAL oppdatere $this->wp_role, men det skjer ikke alltid??
 			$this->_wp_role();
 			if (is_super_admin() && $this->debug ) {
+				global $blog_id;
+				echo 'Type: '.$this->type.'<br>';
 				echo 'ID: '.$this->wp_id.'<br>';
 				echo 'Role: '.$this->wp_role.'<br>';
 				echo 'Blogg-ID: '.$blog_id.'<br>';
