@@ -97,12 +97,22 @@ class UKMuser {
 		}
 		return false;
 	}
+
+	public function wp_user_is_member_of_blog($wp_id) {
+		global $blog_id;
+		if (!is_user_member_of_blog($blog_id, $wp_id)) {
+			if (is_super_admin() && $this->debug) 
+				echo '<b>Bruker er ikke medlem av rett blogg, legger den til.</b><br>';
+			add_user_to_blog($blog_id, $wp_id, $this->wp_role);
+		}
+		return $blog_id;
+	}
 	
 	public function wp_user_create( ) {
 		if(is_super_admin() && $this->debug )
 			echo '<h3>create: '. $this->username .' </h3>';
 		$username_exists = $this->wp_username_exists( $this->username );
-
+		$this->wp_id = $username_exists;
 		$useremail_exists= $this->wp_email_exists( $this->email );
 
 		// echo '<br>Feilsøking for bruker: '.$this->username.'<br>';
@@ -121,6 +131,10 @@ class UKMuser {
 			var_dump($user);
 			echo '<br>';
 		}
+		
+		// Sørg for at brukeren har rettigheter til denne bloggen
+		wp_user_is_member_of_blog($this->wp_id);
+
 		// TODO: FIKS DENNE!
 		// BURDE IKKE KUN SJEKKE DETTE; MEN OGSÅ SJEKKE AT p_ID FRA deltakerObject stemmer med notert p_id
 		// Hvis vi har en bruker i tabellen
@@ -139,7 +153,7 @@ class UKMuser {
 		// $this->password = $this->_checkForUser('password');
 		if (is_super_admin() && $this->debug )
 			echo 'old: '.$old.'<br>';
-		$this->wp_id = $username_exists;
+		
 		if ($old) {
 			if (is_super_admin() && $this->debug )
 				echo '<b>Brukerdata finnes i tabellen.</b><br>';
