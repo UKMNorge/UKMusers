@@ -101,8 +101,12 @@ class UKMuser {
 	public function wp_user_is_member_of_blog($wp_id) {
 		global $blog_id;
 		if (!is_user_member_of_blog($blog_id, $wp_id)) {
-			if (is_super_admin() && $this->debug) 
+			if (is_super_admin() && $this->debug) {
 				echo '<b>Bruker er ikke medlem av rett blogg, legger den til.</b><br>';
+				echo 'ID: '.$this->wp_id.'<br>';
+				echo 'Role: '.$this->wp_role.'<br>';
+				echo 'Blogg-ID: '.$blog_id.'<br>';
+			}
 			add_user_to_blog($blog_id, $wp_id, $this->wp_role);
 		}
 		return $blog_id;
