@@ -133,7 +133,7 @@ class UKMuser {
 		}
 		
 		// Sørg for at brukeren har rettigheter til denne bloggen
-		wp_user_is_member_of_blog($this->wp_id);
+		$this->wp_user_is_member_of_blog($this->wp_id);
 
 		// TODO: FIKS DENNE!
 		// BURDE IKKE KUN SJEKKE DETTE; MEN OGSÅ SJEKKE AT p_ID FRA deltakerObject stemmer med notert p_id
