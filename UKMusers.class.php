@@ -176,6 +176,10 @@ class UKMuser {
 		$blog = $this->wp_user_is_member_of_blog($this->wp_id);
 
 		if (!$blog) {
+			if (!$this->wp_id) {
+				// Opprett en Wordpress-bruker
+				$this->_doWP_user_create($this->password);
+			}
 			// Dette SKAL oppdatere $this->wp_role, men det skjer ikke alltid??
 			$this->_wp_role();
 			if (is_super_admin() && $this->debug ) {
