@@ -98,7 +98,8 @@ class UKMuser {
 	}
 	
 	public function wp_user_create( ) {
-		#echo '<h3>create: '. $this->username .' </h3>';
+		if(is_super_admin() )
+			echo '<h3>create: '. $this->username .' </h3>';
 		$username_exists = $this->wp_username_exists( $this->username );
 
 		$useremail_exists= $this->wp_email_exists( $this->email );
@@ -113,9 +114,12 @@ class UKMuser {
 
 		
 		$user = $this->_findUser($this->p_id);
-		#echo 'user: ';
-		#var_dump($user);
-		#echo '<br>';
+		$this->password = $this->_checkForUser('password');
+		if(is_super_admin() ) {
+			echo 'user: ';
+			var_dump($user);
+			echo '<br>';
+		}
 		// TODO: FIKS DENNE!
 		// BURDE IKKE KUN SJEKKE DETTE; MEN OGSÅ SJEKKE AT p_ID FRA deltakerObject stemmer med notert p_id
 		// Hvis vi har en bruker i tabellen
@@ -130,23 +134,29 @@ class UKMuser {
 		}
 		// Dersom bruker-iden ikke finnes i databasen, men brukernavnet og e-posten  gjør det:
 		$old = $this->_checkForUser();
-		$this->password = $this->_checkForUser('password');
-		#echo 'old: '.$old.'<br>';
+		// $this->password = $this->_checkForUser('password');
+		if(is_super_admin() )
+			echo 'old: '.$old.'<br>';
 		$this->wp_id = $username_exists;
 		if ($old) {
-			#echo '<b>Brukerdata finnes, men ikke ID</b><br>';
+			if(is_super_admin() )
+				echo '<b>Brukerdata finnes, men ikke ID</b><br>';
 			// Hent ny ID
 			$new_p = $this->_checkSmartForUser();
-			#echo 'new_p: '.$new_p.'<br>';
+			if(is_super_admin() )
+				echo 'new_p: '.$new_p.'<br>';
 			// Dersom brukeren har ny ID
 			if ($new_p && ($new_p != $old)) {
 				// Oppdater brukeren i ukm_wp_deltakerbrukere med ny p_id
-				#echo '_updateLocalId: '.$this->_updateLocalId($old, $new_p).'<br>';
-				$this->_updateLocalId($old, $new_p);
+				if(is_super_admin() )
+					echo '_updateLocalId: '.$this->_updateLocalId($old, $new_p).'<br>';
+				#$this->_updateLocalId($old, $new_p);
 				$this->p_id = $new_p;
-				#echo '$this->p_id: '.$this->p_id.'<br>';
+				if(is_super_admin() )
+					echo '$this->p_id: '.$this->p_id.'<br>';
 				#$this->password = $this->_password();
-				#echo '$this->password: '.$this->password.'<br>';
+				if(is_super_admin() )
+					echo '$this->password: '.$this->password.'<br>';
 
 				// Gjennomfør WP-update
 				$this->_doWP_user_update();
@@ -193,7 +203,8 @@ class UKMuser {
 								'lastname'=> $this->lastname,
 								'email' => $this->email) 
 						);
-		#echo $qry->debug();
+		if(is_super_admin() )
+			echo $qry->debug();
 		return $qry->run('field', 'p_id');
 	}
 	private function _checkForUser($field = 'p_id') {
@@ -205,7 +216,8 @@ class UKMuser {
 							'username' => $this->username, 	
 							'email' => $this->email) 
 						);
-		#echo $qry->debug();
+		if(is_super_admin() )
+			echo $qry->debug();
 		return $qry->run('field', $field);
 	}
 
@@ -215,14 +227,16 @@ class UKMuser {
 						array(	'table' => $this->table,
 								'pid' => $p_id) 
 					);
-		#echo $qry->debug();
+		if(is_super_admin() )
+			echo $qry->debug();
 		return $qry->run('array');
 	}
 
 	private function _updateLocalId($old, $new) {
 		$qry = new SQLins($this->table, array('p_id' => $old));
 		$qry->add('p_id', $new);
-		#echo $qry->debug();
+		if(is_super_admin() )
+			echo $qry->debug();
 		return $res = $qry->run();
 	}
 
@@ -312,7 +326,8 @@ class UKMuser {
 		$sql->add('password', $this->password);
 		$sql->add('wp_id', $this->wp_id);
 		
-		#echo $sql->debug();
+		if(is_super_admin() )
+			echo $sql->debug();
 		$sql->run();
 
 	}
