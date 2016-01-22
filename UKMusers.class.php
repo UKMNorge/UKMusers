@@ -1,7 +1,7 @@
 <?php
 class UKMuser {
 	var $table = 'ukm_wp_deltakerbrukere';
-	var $debug = false;
+	var $debug = true;
 
 	public function __construct( $deltakerObject, $type ) {
 		$deltakerObject->loadGEO();
@@ -275,7 +275,18 @@ class UKMuser {
 	
 	private function _doWP_add_to_blog() {
 		global $blog_id;
-		add_user_to_blog( $blog_id, $this->wp_id, $this->wp_role );
+		$add = add_user_to_blog( $blog_id, $this->wp_id, $this->wp_role );
+		if(is_super_admin() && $this->debug ) {
+			if ($add === true) {
+				echo 'Lagt brukeren til blogg '.$blog_id.'<br>';
+			}
+			elseif (get_class($add) == 'WP_Error') {
+				echo 'Feilet å legge til brukeren til blogg '.$blog_id.'<br>';		
+				var_dump($add);	
+				echo '<br>';
+			}
+		}
+
 	}
 	
 	private function _wp_role() {
@@ -323,14 +334,31 @@ class UKMuser {
 	}
 	
 	private function _doWP_user_update() {
+		global $blog_id;
 		if( empty( $this->password ) ) {
 			$this->password = UKM_ordpass();
 			wp_set_password( $this->password, $this->wp_id );
 		}
 		
+
+
 		update_user_meta( $this->wp_id, 'p_id', $this->p_id );
 		wp_update_user( array('ID' => $this->wp_id, 'description' => $this->description, 'role' => $this->wp_role ));
 		
+		if (!is_user_member_of_blog($this->wp_id, $blog_id) ) {
+			$add = add_user_to_blog($blog_id, $this->wp_id, $this->wp_role);
+			if(is_super_admin() && $this->debug ) {
+				if ($add === true) {
+					echo 'Lagt brukeren til blogg '.$blog_id.'<br>';
+				}
+				elseif (get_class($add) == 'WP_Error') {
+					echo 'Feilet å legge til brukeren til blogg '.$blog_id.'<br>';		
+					var_dump($add);	
+					echo '<br>';
+				}
+			}
+		}
+
 		$test = new SQL("SELECT `p_id` FROM `#table` WHERE `p_id` = '#pid'", array('table'=>$this->table, 'pid'=>$this->p_id));
 		$res = $test->run('field','p_id');
 		
