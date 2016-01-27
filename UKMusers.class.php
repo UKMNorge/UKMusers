@@ -1,7 +1,7 @@
 <?php
 class UKMuser {
 	var $table = 'ukm_wp_deltakerbrukere';
-	var $debug = false;
+	var $debug = true;
 
 	public function __construct( $deltakerObject, $type ) {
 		$deltakerObject->loadGEO();
@@ -335,6 +335,10 @@ class UKMuser {
 			}
 			return ;
 		}
+
+		// Oppdater $this->wp_role
+		$this->_wp_role();
+
 		// if (is_super_admin() ) 
 		// 	echo 'Setter wp_id og legger brukeren til bloggen<br>';
 		$this->wp_id = $wp_user_id;
@@ -344,8 +348,7 @@ class UKMuser {
 	
 	private function _doWP_add_to_blog() {
 		global $blog_id;
-		// Oppdater $this->wp_role
-		$this->_wp_role();
+		
 		$add = add_user_to_blog( $blog_id, $this->wp_id, $this->wp_role );
 		if(is_super_admin() && $this->debug ) {
 			if ($add === true) {
