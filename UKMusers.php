@@ -28,7 +28,7 @@ function UKMusers() {
 
 	switch( $_GET['action'] ) {
 		case 'nettred':
-			require_once('controller/nettred.controller.php');
+			require_once('controller/media.controller.php');
 			echo TWIG('nettred.twig.html', $TWIGdata, dirname(__FILE__));
 			break;
 		case 'arrangor':

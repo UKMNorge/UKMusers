@@ -9,12 +9,15 @@ $users = array();
 $m = new monstring(get_option('pl_id'));
 $innslag = $m->innslag_btid();
 #echo 'site-type: '.get_option('site_type');
-
+/*echo '<pre>';
+var_dump($innslag);
+echo '</pre>';
+*/
 # A list of p_ids already added, so a person won't happen multiple times
 $ignoreList = array();
 $TWIGdata['users'] = array();
 foreach($innslag as $band_type => $bands) {
-	if ($band_type == 8 || $band_type == 9) {
+	if ($band_type == 2 || $band_type == 5) {
 		foreach ($bands as $band) {
 			$inn = new innslag($band['b_id']);
 			// Hent kun videresendte på fylkesnivå
@@ -22,11 +25,10 @@ foreach($innslag as $band_type => $bands) {
 				$inn->videresendte($m->g('pl_id'));
 			} 
 			$deltakere = $inn->personObjekter();
-/*			echo '<br><h4>Feilsøking</h4>';
-			echo '<b>Deltakere</b><br>';
+			/*echo '<br><b>Deltakere</b>:';
 			var_dump($deltakere);
-			echo '<br>';
-*/
+			echo '<br>';*/
+
 			foreach( $deltakere as $deltaker ) {
 				if (in_array($deltaker->g('p_id'), $ignoreList) ) {
 					continue;
@@ -34,16 +36,10 @@ foreach($innslag as $band_type => $bands) {
 				$user = new UKMuser();
 				$p_id = $deltaker->g('p_id');
 				$email = $deltaker->g('p_email');
-					
-/*				echo '<b>Lager bruker:</b><br>';
-				var_dump($p_id);
-				var_dump($email);
-*/				if( !$user->findByPID( $p_id ) ) {
-					//echo '<br><b>Fant ikke en ferdig bruker med denne p_id.</b>';
+				
+				if( !$user->findByPID( $p_id ) ) {
 					// Foreslå brukernavn basert på fornavn.etternavn
 					$username = $user->getSuggestedUsername($p_id);
-					//echo '<br>Foreslått brukernavn: '.$username;
-
 					if( $user->findByUsernameAndEmail( $username, $email ) ) {
 						$user->updatePID( $p_id );	
 					} else {
@@ -61,15 +57,13 @@ foreach($innslag as $band_type => $bands) {
 						if( !$user->isEmailAvailable( $email ) ) {
 							$email = $p_id.'@deltaker.ukm.no';
 						}
-				
-						//echo '<br>E-post-adresse: '.$email;
+			
 						// Opprett ny bruker med garantert ledig p_id, brukernavn og epost
-						//echo '<br><b>Oppretter ny bruker:</b><br>';
-						$user->create( $p_id, $username, $email, 'arrangor' );
+						$user->create( $p_id, $username, $email, 'nettredaksjon' );
 					}
 				}
-				/*echo '<br><b>Bruker:</b><br>';
-				var_dump($user);*/
+
+				
 				if ($user->valid()) {
 					$ignoreList[] = $user->p_id;
 					// Nå som vi har en bruker med all info, sjekk at brukeren har rettigheter til denne bloggen
@@ -94,4 +88,3 @@ foreach($innslag as $band_type => $bands) {
 foreach($TWIGdata['users'] as $u) {
 	$TWIGdata['errors'] = $u->getErrors();
 }
-

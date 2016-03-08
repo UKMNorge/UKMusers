@@ -13,7 +13,7 @@
 		</div>
 		<div class="col-xs-6">
 			<h4>Rapportbrukere</h4>
-			<p>Rapportbrukerne har tilgang til rapport- og playbackmodulen.</p>
+			<p>Rapportbrukerne har tilgang til rapport-, materiell- og playbackmodulen.</p>
 		</div>
 		<div class="clearfix"></div>
 	</div>
@@ -22,8 +22,8 @@
 		{% for user in users %}
 			<tr>
 				<td class="col-xs-12 col-sm-4 col-md-4">
-					<h5>{{ user.firstname }} {{ user.lastname }}</h5>
-					{% if user.wp_role == 'editor' %}
+					<h5>{{ user.first_name }} {{ user.last_name }}</h5>
+					{% if user.role == 'editor' %}
 						<p class="label label-danger">Arrangør</p>
 					{% else %}
 						<p class="label label-success">Rapport-bruker</p>
@@ -40,7 +40,7 @@
 						<span class="caret"></span>
 					</button>
 					<ul class="dropdown-menu" role="menu" aria-labelledby="actionsUser_{{ user.wp_id }}">
-						{% if user.wp_role == 'editor' %}
+						{% if user.role == 'editor' %}
 							<li role="presentation">
 								<a href="?page=UKMusers&action=arrangor&downgrade={{ user.wp_id }}">Nedgrader til rapportbruker</a>
 							</li>

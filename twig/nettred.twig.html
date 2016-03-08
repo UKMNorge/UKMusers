@@ -2,16 +2,20 @@
 
 {% block content %}
 <div class="UKMwidth">
+	{% for key, error in errors %}
+		<div class="alert alert-{{ key }}">{{ error }}</div>
+	{% endfor %}
+
 	<h3>Nettredaksjonsbrukere</h3>
 	<p class="lead">Alle nettredaksjons- og filmdeltakere får automatisk bruker.<br /> Ingen blir varslet om dette, så arrangøren må selv distribuere passordene</p>
 	<div class="alert alert-info">
 		<div class="col-xs-6">
 			<h4>Nettredaktør-brukere</h4>
-			<p>Nettredaktører kan publisere innlegg, og har også tilgang til bilde- og videomodulen.</p>
+			<p>Nettredaktører kan publisere innlegg, og har også tilgang til bilde-, materiell- og videomodulen.</p>
 		</div>
 		<div class="col-xs-6">
 			<h4>Nettredaksjonsbrukere</h4>
-			<p>Nettredaksjonsbrukerne kan skrive, men ikke publisere innlegg. De har også tilgang til bilde- og videomodulen.</p>
+			<p>Nettredaksjonsbrukerne kan skrive, men ikke publisere innlegg. De har også tilgang til bilde-, materiell- og videomodulen.</p>
 		</div>
 		<div class="clearfix"></div>
 	</div>
@@ -19,8 +23,8 @@
 		{% for user in users %}
 		<tr>
 			<td class="col-xs-12 col-sm-4 col-md-4">
-				<h5>{{ user.firstname }} {{ user.lastname }}</h5>
-				{% if user.wp_role == 'author' %}
+				<h5>{{ user.first_name }} {{ user.last_name }}</h5>
+				{% if user.role == 'author' %}
 					<p class="label label-danger">Nettredaktør</p>
 				{% else %}
 					<p class="label label-success">Nettredaksjon</p>
@@ -37,7 +41,7 @@
 					<span class="caret"></span>
 				</button>
 				<ul class="dropdown-menu" role="menu" aria-labelledby="actionsUser_{{ user.wp_id }}">
-					{% if user.wp_role == 'author' %}
+					{% if user.role == 'author' %}
 						<li role="presentation">
 							<a href="?page=UKMusers&action=nettred&downgrade={{ user.wp_id }}">Nedgrader til nettredaksjonsbruker</a>
 						</li>

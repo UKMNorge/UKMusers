@@ -1,473 +1,407 @@
 <?php
+
+### Deltakerbrukere v3
+# Rewrite 06.03.2016
+# Modulen integrerer deltakermodulen og Wordpress-systemet
+# sånn at alle nettredaksjon- og arrangør-deltakere får 
+# innlogging til arrangørsystemet med tilgang til ulike deler.
+# Asgeir Stavik Hustad (@asgeirsh)
+# asgeirsh@ukmmedia.no
+
 class UKMuser {
+	
 	var $table = 'ukm_wp_deltakerbrukere';
-	var $debug = false;
+	var $role = null;
 
-	public function __construct( $deltakerObject, $type ) {
-		$deltakerObject->loadGEO();
-		$this->deltakerObject = $deltakerObject;
-		$this->type = $type;
+	var $errors = array();
 
-		$this->p_id = $deltakerObject->get('p_id');
-		$this->firstname = trim( $deltakerObject->get('p_firstname') );
-		$this->lastname = trim( $deltakerObject->get('p_lastname') );
-		
-		$this->_username();
-		$this->_email( $deltakerObject );
-		$this->_wp_role();
-		$this->_password();
+	# Variables to be used externally
+	var $p_id = null;
+	var $wp_id = null;
+	var $username = null;
+	var $email = null;
+	var $password = null;
+	var $description = null;
 
-		$this->title    = $deltakerObject->get('instrument');
-		$this->description = $deltakerObject->get('p_firstname') . ' ' . $deltakerObject->get('p_lastname')
-							 . ' er ' . $deltakerObject->alder() . ' gammel og kommer fra ' 
-							 . $deltakerObject->get('kommune') . ' i ' . $deltakerObject->get('fylke');
+	# Variables fetched from participant_object
+	var $first_name = null;
+	var $last_name = null;
+
+	var $valid = false;
+
+	public function __construct() {
+
 	}
-	
-	private function _password() {
-		$sql = new SQL("SELECT `password`
-						FROM `#table`
-						WHERE `username` = '#username'
-						AND `p_id` = '#pid'",
-					array('table' => $this->table,
-						  'username' => $this->username,
-						  'pid' => $this->p_id)
+
+	public function valid() {
+		return $this->valid;
+	}
+
+	public function findByPID( $p_id ) {
+		return $this->loadUserData($p_id);
+	}
+
+	public function findByUsernameAndEmail( $username, $email ) {
+		# Sjekk om brukernavn OG e-post finnes i databasen.
+		$qry = new SQL("SELECT * FROM `#table`
+						WHERE `p_username` = '#username'
+						AND `p_email` = '#epost'", 
+					array(
+						"table" => $this->table,
+						"username" => $this->username, 
+						"epost" => $this->email
+						)
 					);
-		#echo $sql->debug();
-		$this->password = $sql->run('field','password');
+		$localUser = $qry->run('array');
+		if ($localUser) {
+			$this->loadUserData($localUser['p_id']);
+			return true;
+		}
+		return false;
 	}
+
+	public function updatePID( $p_id ) {
+		// Når denne kjøres er data lastet inn, så $this->p_id er p_id som matcher brukernavn og e-post
+		$qry = new SQLins($this->table, array('p_id' => $this->p_id));
+
+		$qry->add('p_id', $p_id);
+		$res = $qry->run();
+
+		if($res == 1) {
+			// Oppdatering funket, last inn brukerdata på nytt
+			$this->loadUserData($p_id);
+			return true;
+		}
+		else {
+			throw new Exception('UKMusers: updatePID klarte ikke å oppdatere p_id fra '.$this->p_id.' til '. $p_id);
+			return false;
+		}
+	}
+
+	public function isUsernameAvailable( $username ) {
+		$qry = new SQL("SELECT COUNT(*) FROM `#table`
+						WHERE `username` = '#username'",
+						array('table' => $this->table, 'username' => $username)
+					);
+		$count = $qry->run('field', 'COUNT(*)');
+
+		if ($count == 0) {
+			return true;
+		}
+		return false;
+	}
+
+	public function isEmailAvailable( $email ) {
+		# Hvis e-post er tom vil den ikke funke.
+		if (empty($email))
+			return false;
+		$qry = new SQL("SELECT COUNT(*) FROM `#table`
+						WHERE `p_email` = '#email'",
+						array('table' => $this->table, 'email' => $email)
+					);
+		$count = $qry->run('field', 'COUNT(*)');
+
+		if ($count == 0) {
+			return true;
+		}
+		return false;
+	}
+
+	public function create( $p_id, $username, $email, $type ) {
+		require_once('UKM/inc/password.inc.php');
+		$password = UKM_ordpass();
+
+		//echo 'Input: '. $p_id .', '. $username.', '.$email.', '.$type.', '.$password;
+		// Verify that all info is here
+		global $blog_id;
+		if ( empty($p_id) || empty($username) || empty($email) || empty($password) || empty($blog_id) ) {
+			$this->errors[] = array('danger' => 'Data mangler, kan ikke opprette ny bruker (Brukernavn: '.$username.', p_id: '.$p_id.').');
+			return false;
+		}
+
+		// Add to wordpress
+		$wp_id = wp_create_user($username, $password, $email);
+		/*echo '<br>wp_id: ';
+		var_dump($wp_id);*/
+		if (is_wp_error($wp_id)) {
+			$this->errors[] = array('danger' => 'Klarte ikke opprette Wordpress-bruker!');
+			return false;
+		}
+
+		// Add to database
+		/*echo '<br>Fatal error skjer rett under denne';
+		var_dump($p_id);
+		var_dump($username);
+		var_dump($email);
+		var_dump($password);
+		var_dump($wp_id);
+		*/
+		$qry = new SQLins('ukm_wp_deltakerbrukere');
+		$qry->add('p_id', $p_id);
+		$qry->add('username', $username);
+		$qry->add('email', $email);
+		$qry->add('password', $password);
+		$qry->add('wp_id', $wp_id);
+
+		$res = $qry->run();
+		//echo '<br>Eller så gjorde det inte det';
+		if ($res != 1) {
+			$this->errors[] = array('danger' => 'Klarte ikke opprette ny lokal bruker! SQL: ' . $qry->debug() );
+			return false;
+		}
+
+		$role = $this->_getRoleFromType($type);
+
+		add_user_to_blog($wp_id, $blog_id, $role);
+		update_user_meta( $wp_id, 'p_id', $p_id );
+
+		$person = new person($p_id, false);
+		$first_name = $person->g('p_firstname');
+		$last_name = $person->g('p_lastname');
+		$person->loadGEO();
+		$description = $first_name . ' ' . $lastname
+					. ' er ' . $person->alder() . ' år gammel og kommer fra ' 
+					. $person->g('kommune') . ' i ' . $person->get('fylke');
+
+		$updates['ID'] = $wp_id;
+		$updates['role'] = $role;
+		$updates['description'] = $description;
+		$updates['first_name'] = $first_name;
+		$updates['last_name'] = $last_name;
+		wp_update_user($updates);
+
+		$this->loadUserData($p_id);
+
+		return true;
+	}
+
+	public function upgrade() {
+		switch ($this->role) {
+			case 'contributor':
+				$new = 'author';
+				break;
+			case 'ukm_produsent':
+				$new = 'editor';
+				break;
+			default:
+				$new = null;
+				break;
+		}
+
+		if (!$new) {
+			$this->errors[] = array('danger' => 'Klarte ikke å oppgradere brukeren.');
+			return false;
+		}
+		if(!$this->wp_id) {
+
+		}
+
+		#echo '<br><h4>Upgrade</h4>';
+		#echo '$this->wp_id: ';
+		#echo $this->wp_id;
+		#echo '.<br>Til rolle: '. $new;
+		#echo '.<br> Result: ';
+		$updates['ID'] = $this->wp_id;
+		$updates['role'] = $new;
+		$res = wp_update_user($updates);
+		#var_dump($res);
+
+		if (is_wp_error($res))
+			return false;
+		$this->role = $new;
+		return true;
+	}
+
+	public function downgrade() {
+		switch ($this->role) {
+			case 'author':
+				$new = 'contributor';
+				break;
+			case 'editor':
+				$new = 'ukm_produsent';
+				break;
+			default:
+				$new = null;
+				break;
+		}
+
+		if (!$new) {
+			$this->errors[] = array('danger' => 'Klarte ikke å oppgradere brukeren.');
+			return false;
+		}
+
+		$updates['ID'] = $this->wp_id;
+		$updates['role'] = $new;
+		$res = wp_update_user($updates);
+		#echo 'downgrade';
+		#var_dump($res);
+		if (is_wp_error($res))
+			return false;
+		$this->role = $new;
+		return true;
+	}
+
+	public function hasRightsToBlog( $blog_id = null) {
+		/*$blogs = get_blogs_of_user($this->p_id);
+		foreach ($blogs as $blog) {
+			if ($blog->userblog_id == $blog_id) {
+				return true;
+			}
+		}
+		return false;*/
+		if (!$blog_id) 
+			global $blog_id;
+		return is_user_member_of_blog($this->wp_id, $blog_id);
+	}
+
+	# Function addToBlog()
+	# Legger til brukeren representert i dette objektet i en wordpress-blogg.
+	public function addToBlog( $blog_id = null ) {
+		if (!$blog_id) 
+			global $blog_id;
+
+		if (empty($blog_id) || empty($this->wp_id) || empty($this->role) ) {
+			$errors[] = array('danger' => 'Forsøkte å legge brukeren til en blogg med manglende data!');
+			return false;
+		}
 	
-	
-	private function _username() {
-		$clean_firstname = mb_strtolower( str_replace(' ', '.', $this->firstname ) );
-		$clean_lastname = mb_strtolower( str_replace(' ', '.', $this->lastname ) );
+		// brukeren har alltid en wordpress-id, det fikses i create eller load.
+		$res = add_user_to_blog( $blog_id, $this->wp_id, $this->role );
+		if (true === $res) {
+			return true;
+		}
+		var_dump($res); // $res is WP_Error object
+		return false;
+	}
+
+	# Function findLocalUser
+	# Tar i mot p_id og finner en bruker i tabellen.
+	# Returnerer true om alt gikk fint, false om bruker-IDen ikke finnes og en Exception hvis noe annet mangler eller feil skjer.
+	public function findLocalUser($p_id) {
+		$qry = new SQL("SELECT COUNT(*) FROM `#table`
+						WHERE `p_id` = '#p_id'",
+						array('table' => $this->table, 'p_id' => $p_id)
+					);
+		$count = $qry->run('field', 'COUNT(*)');
+		if ($count != 1) 
+			return false;
+
+		$this->loadUserData($p_id);
+		return true;
+	}
+
+	# Function loadUserData
+	# Tar i mot p_id og henter ut data fra en bruker i tabellene og setter disse i klasseverdiene.
+	# Returnerer true om alt gikk fint, false om noe data mangler eller feil skjer.
+	public function loadUserData($p_id) {
+		$qry = new SQL("SELECT * 
+						FROM `#table`
+						WHERE `p_id` = '#p_id'", 
+						array('table' => $this->table, 'p_id' => $p_id)
+					);
+
+		$res = $qry->run('array');
+
+		if(!$res) {
+			return false;
+		}
+
+		$this->p_id = $p_id;
+		$this->username = $res['username'];
+		$this->email = $res['email'];
+		$this->password = $res['password'];
+		$this->wp_id = $res['wp_id'];
+
+		// Hent rolle for denne bloggen
+		$wp_user = new WP_User($this->wp_id);
+		$this->role = $wp_user->roles[0];
+		$this->description = get_user_meta($this->wp_id, 'description', true);
+
+		## Fetch data from person-object
+		$person = new person($p_id, false);
+		$this->first_name = $person->g('p_firstname');
+		$this->last_name = $person->g('p_lastname');
+
+		$this->valid = true;
+		return true;
+	}
+
+	# Function getErrors
+	# Returnerer et array med liste over feil som skjedde under opprettingen av objektet.
+	# Sortert på keys:
+	#	info
+	#	warning
+	# 	danger
+	# Info er mest for debug, warning kan ha effekt på brukeren, danger er kritiske feil som vil føre til problemer for enkeltbrukere. Bør varsles til bruker.
+	# Loop gjennom alle i debug-modus, varsle om danger uansett
+	public function getErrors() {
+		return $this->errors;
+	}
+
+	public function getSuggestedUsername($p_id = null) {
+		if (!$p_id) {
+			$p_id = $this->p_id;
+		}
+		if (!$p_id) {
+			$this->errors[] = array('danger' => 'Kan ikke foreslå brukernavn uten en p_id å laste navn fra.');
+			return false;
+		}
+		$person = new person($p_id, false);
+		$first_name = $person->g('p_firstname');
+		$last_name = $person->g('p_lastname');
+
+		// Ensure that names are loaded
+		if (empty($first_name) || empty($last_name) ) {
+			$this->errors[] = array('danger' => 'Kan ikke foreslå brukernavn uten å laste inn fornavn eller etternavn');
+			return false;
+		}
+
+		$clean_firstname = mb_strtolower( str_replace(' ', '.', $first_name ) );
+		$clean_lastname = mb_strtolower( str_replace(' ', '.', $last_name ) );
 		
 		$clean_firstname = $this->_clean( $clean_firstname );
 		$clean_lastname = $this->_clean( $clean_lastname );
 		
-		$this->username = $clean_firstname.'.'.$clean_lastname;
+		$username = $clean_firstname.'.'.$clean_lastname;
+		return $username;
 	}
-	
+
 	private function _clean( $string ) {
+		// TODO: Filtrer på flere rare bokstaver
+
 		$string = str_replace('æ', 'a', $string);
 		$string = str_replace('ø', 'o', $string);
 		$string = str_replace('å', 'a', $string);
 		
 		return $string;
 	}
-	
-	private function _email( $deltakerObject ) {
-		$email = $deltakerObject->get('p_email');
-		
-		if( empty( $email ) ) {
-			$this->email = $deltakerObject->get('p_id') . '@deltaker.ukm.no';
-		} else {
-			$this->email = $email;
+
+	private function _set_role($type) {
+		$this->role = _getRoleFromType($type);
+	}
+
+	private function _getRoleFromType($type) {
+		switch($type) {
+			case 'nettredaksjon': 
+				$role = 'contributor';
+				break;
+			case 'arrangor': 
+				$role = 'ukm_produsent';
+				break;
+			default: 
+				$role = 'contributor';
+				// Varsle om at rolle-finning feilet og at contributor er satt
+				$this->errors[] = array('danger' => 'UKMusers: Rolle feilet, satt contributor som default! $type er: '.$type);
+				error_log('UKMusers: Rolle feilet, satt contributor som default! $type er: '.$type);
 		}
-	}
-	
-	
-	public function wp_username_exists( $username ) {
-		return username_exists( $username );
-	}
-	
-	public function wp_username_is_mine() {
-		$wp_user_id = $this->wp_username_exists( $this->username );
-		
-		if( $wp_user_id ) {
-			$wp_user_participant_id = get_user_meta( $wp_user_id, 'p_id', true );
-			if( $wp_user_participant_id == $this->p_id ) {
-				return true;
-			}
-			if (is_super_admin() && $this->debug )
-				echo '<b>Brukernavnet finnes, men tilhører ikke denne brukeren.</b><br>';
-			return false;
-		}
-		if (is_super_admin() && $this->debug )
-			echo '<b>Brukernavnet finnes ikke.</b><br>';
-		return false;
+		return $role;
 	}
 
-	// public function wp_username_is_mine() {
-	//     $wp_user_id = $this->wp_username_exists( $this->username );
-
-	//     if( $wp_user_id ) {
-	//         $wp_user_participant_id = get_user_meta( $wp_user_id, 'p_id', true );
-	//         if( $wp_user_participant_id == $this->p_id ) {
-	//             return true;
-	//         }
-
-	//         $sql = new SQL("SELECT `p_id` FROM `smartukm_participant`
-	//                         WHERE `p_firstname` = '#firstname'
-	//                         AND `p_lastname` = '#lastname'
-	//                         AND `p_email` = '#email'
-	//                         ORDER BY `p_id` DESC",
-	//                         array(  'firstname' => $this->deltakerObject->get('p_firstname'),
-	//                                 'lastname' => $this->deltakerObject->get('p_lastname'),
-	//                                 'email' => $this->deltakerObject->get('p_email'));
-	//         $res = $sql->run();
-	//         if( $res ) {
-	//             while( $r = mysql_fetch_assoc( $res ) ) {
-	//                 if( $r['p_id'] == $wp_user_participant_id ) {
-	//                     $this->_wp_set_new_p_id( $this->p_id );
-	//                     return true;
-	//                 }
-	//             }
-	//         }
-	//     }
-	//     return false;
-	// }
-	
-	public function wp_email_exists( $email ) {
-		return email_exists( $email );
-	}
-	
-	public function wp_useremail_is_mine() {
-		$wp_user_id = $this->wp_email_exists( $this->email );
-		
-		if( $wp_user_id ) {
-			$wp_user_participant_id = get_user_meta( $wp_user_id, 'p_id', true );
-
-			if( $wp_user_participant_id == $p_id ) {
-				return true;
-			}
-		}
-		return false;
-	}
-
-	public function wp_user_is_member_of_blog($wp_id) {
+	private function _find_blog_id() {
 		global $blog_id;
-		if (!is_user_member_of_blog($blog_id, $wp_id)) {
-			if (is_super_admin() && $this->debug) {
-				echo '<b>Bruker er ikke medlem av rett blogg.</b><br>';
-			}
-			return false;
-		}
+
+		if (!$blog_id) 
+			throw new Exception('UKMusers: Fant ikke blogg-id');
 		return $blog_id;
 	}
-	
-	public function wp_user_create( ) {
-		if(is_super_admin() && $this->debug )
-			echo '<h3>create: '. $this->username .' </h3>';
-		$username_exists = $this->wp_username_exists( $this->username );
-		$this->wp_id = $username_exists;
-		$useremail_exists= $this->wp_email_exists( $this->email );
-
-		// echo '<br>Feilsøking for bruker: '.$this->username.'<br>';
-		// var_dump($this);
-		// echo '<br>username_exists: '.$username_exists.'<br>';
-		// echo 'useremail_exists: '.$useremail_exists.'<br>';
-		// echo 'wp_username_is_mine '.$this->wp_username_is_mine($this->username).'<br>';
-		// echo 'wp_useremail_is_mine '.$this->wp_useremail_is_mine($this->email).'<br>';
-		// echo 'p_id: '.$this->p_id.'<br>';
-
-		if (!$username_exists && $useremail_exists) {
-			// E-post finnes i WP, men brukernavnet gjør det ikke
-		}
-		
-		$user = $this->_findUser($this->p_id);
-		$this->password = $this->_checkForUser('password');
-		if(is_super_admin() && $this->debug) {
-			echo 'user: ';
-			var_dump($user);
-			echo '<br>';
-		}
-		
-		// TODO: FIKS DENNE!
-		// BURDE IKKE KUN SJEKKE DETTE; MEN OGSÅ SJEKKE AT p_ID FRA deltakerObject stemmer med notert p_id
-		// Hvis vi har en bruker i tabellen
-		if ($user) {
-			// Sørg for at brukeren har rettigheter til denne bloggen
-			$blog = $this->wp_user_is_member_of_blog($this->wp_id);
-			if (!$blog) {
-				// Dette SKAL oppdatere $this->wp_role, men det skjer ikke alltid??
-				$this->_wp_role();
-				if (is_super_admin() && $this->debug ) {
-					global $blog_id;
-					echo 'Type: '.$this->type.'<br>';
-					echo 'ID: '.$this->wp_id.'<br>';
-					echo 'Role: '.$this->wp_role.'<br>';
-					echo 'Blogg-ID: '.$blog_id.'<br>';
-				}
-				$this->_doWP_add_to_blog();
-				// add_user_to_blog($blog_id, $wp_id, $this->wp_role);
-			}
-			// Sjekker om brukernavn finnes i WP og tilhører denne p_id
-			if ($username_exists && $this->wp_username_is_mine($this->username) ) {
-				// TRENGS IKKE? Oppdater lokalt objekt
-				if (is_super_admin() && $this->debug )
-					echo '<b>Ting funker, returnerer tidlig.</b><br>';
-				// Returner ID
-				return $username_exists;
-			}
-		}
-		// Dersom bruker-iden ikke finnes i databasen, men brukernavnet og e-posten gjør det:
-		$old = $this->_checkForUser();
-		// $this->password = $this->_checkForUser('password');
-		if (is_super_admin() && $this->debug )
-			echo 'old: '.$old.'<br>';
-		if ($old) {
-			if (is_super_admin() && $this->debug )
-				echo '<b>Brukerdata finnes i tabellen.</b><br>';
-			// Hent ny ID
-			$new_p = $this->p_id;
-			//$new_p = $this->_checkSmartForUser();
-			if (is_super_admin() && $this->debug )
-				echo 'new_p: '.$new_p.'<br>';
-			// Dersom brukeren har ny ID
-			if ($new_p && ($new_p != $old)) {
-				// Oppdater brukeren i ukm_wp_deltakerbrukere med ny p_id
-				if (is_super_admin() && $this->debug ) {
-					echo '<b>Bruker-ID i tabellen er utdatert.</b><br>';
-					echo '_updateLocalId: '.$this->_updateLocalId($old, $new_p).'<br>';
-				}
-				#$this->_updateLocalId($old, $new_p);
-				$this->p_id = $new_p;
-				if (is_super_admin() && $this->debug )
-					echo '$this->p_id: '.$this->p_id.'<br>';
-				#$this->password = $this->_password();
-				if (is_super_admin() && $this->debug )
-					echo '$this->password: '.$this->password.'<br>';
-
-				// Gjennomfør WP-update
-				$this->_doWP_user_update();
-				return $this->wp_id;
-			}
-			else {
-				// Brukeren har samme ID, men finnes ikke i WP
-				if (is_super_admin() && $this->debug )
-					echo '<b>Brukeren har samme ID, men finnes ikke i WP. Kjører _doWP_user_create()</b><br>';
-				$this->_doWP_user_create();
-
-				return $this->wp_id;
-			}
-		}
-		// Brukerdata finnes ikke i tabellen eller WP, så opprett ny rad begge steder
-		if (is_super_admin() && $this->debug )
-			echo 'Kjører _doWP_user_create()<br>';
-		$this->_doWP_user_create( );
-
-		// // Returner brukerID hvis brukernavn finnes, og det tilhører denne P_ID
-		// // Finn neste ledige brukernavn hvis dette er tatt
-		// if( $username_exists ) {
-		// 	$test_username_count = 0;
-		// 	while( $username_exists && !$this->wp_username_is_mine( $this->username ) ) {
-		// 		$test_username_count++;
-		// 		$username_exists = $this->wp_username_exists( $this->username . $test_username_count );
-		// 	}
-		// 	if( $username_exists ) {
-		// 		$this->wp_id = $username_exists;
-		// 		$this->_doWP_user_update();
-		// 		return $username_exists;
-		// 	}
-
-		// 	$this->username .= $test_username_count;
-		// }
-		
-		// if( $useremail_exists && $this->wp_useremail_is_mine() ) {
-		// 	echo 'E-postadressen finnes. og tilhører denne brukeren.<br />';
-		// 	return $useremail_exists;
-		// }
-	
-	}
-
-	
-
-	private function _checkSmartForUser() {
-		$qry = new SQL("SELECT `p_id` FROM  `smartukm_participant` 
-						WHERE 	`p_firstname` = '#firstname'
-						AND 	`p_lastname` = '#lastname'
-						AND 	`p_email`	 = '#email'
-						AND 	`p_id` = '#pid'
-						ORDER BY `p_id` DESC;", 
-						array(	'pid' => $this->p_id,
-								'firstname' => $this->firstname, 
-								'lastname'=> $this->lastname,
-								'email' => $this->email) 
-						);
-		if (is_super_admin() && $this->debug )
-			echo $qry->debug();
-		return $qry->run('field', 'p_id');
-	}
-	private function _checkForUser($field = 'p_id') {
-		$qry = new SQL("SELECT `#field` FROM  `#table` 
-						WHERE 	`username` = '#username'
-						AND 	`email` = '#email';", 
-					array( 	'field' => $field,
-							'table' => $this->table,
-							'username' => $this->username, 	
-							'email' => $this->email) 
-						);
-		if (is_super_admin() && $this->debug )
-			echo $qry->debug();
-		return $qry->run('field', $field);
-	}
-
-	private function _findUser($p_id) {
-		$qry = new SQL("SELECT * FROM `#table`
-						WHERE 	`p_id` = '#pid';",
-						array(	'table' => $this->table,
-								'pid' => $p_id) 
-					);
-		if (is_super_admin() && $this->debug )
-			echo $qry->debug();
-		return $qry->run('array');
-	}
-
-	private function _updateLocalId($old, $new) {
-		$qry = new SQLins($this->table, array('p_id' => $old));
-		$qry->add('p_id', $new);
-		if (is_super_admin() && $this->debug )
-			echo $qry->debug();
-		return $res = $qry->run();
-	}
-
-	private function _doWP_user_create($password = null) {
-		if (!$password) 
-			$this->password = UKM_ordpass();
-
-		$wp_user_id = wp_create_user( $this->username, $this->password, $this->email );
-		
-		// IF IS ERROR
-		if( is_object( $wp_user_id ) ) {
-			USER_CREATE_ERROR( $wp_user_id );
-			if(is_super_admin() && $this->debug ) {
-				echo '<b>FAILED TO CREATE USER</b><br>';
-			}
-			return ;
-		}
-
-		// Oppdater $this->wp_role
-		$this->_wp_role();
-
-		// if (is_super_admin() ) 
-		// 	echo 'Setter wp_id og legger brukeren til bloggen<br>';
-		$this->wp_id = $wp_user_id;
-		$this->_doWP_add_to_blog();
-		$this->_doWP_user_update();
-	}
-	
-	private function _doWP_add_to_blog() {
-		global $blog_id;
-		
-		$add = add_user_to_blog( $blog_id, $this->wp_id, $this->wp_role );
-		if(is_super_admin() && $this->debug ) {
-			if ($add === true) {
-				echo 'Lagt brukeren til blogg '.$blog_id.'<br>';
-			}
-			elseif (get_class($add) == 'WP_Error') {
-				echo 'Feilet å legge til brukeren til blogg '.$blog_id.'<br>';		
-				var_dump($add);	
-				echo '<br>';
-			}
-			else {
-				echo '<b>Ukjent feil!</b><br>';
-			}
-		}
-
-	}
-	
-	private function _wp_role() {
-		switch( $this->type ) {
-			case 'nettredaksjon':
-				$this->wp_role = 'contributor';
-				break;
-			case 'arrangor':
-				$this->wp_role = 'ukm_produsent';
-				break;
-			default:
-				$this->wp_role = 'subscriber';
-				break;
-		}
-		
-		$user_id = $this->wp_username_exists( $this->username );
-		if( $user_id ) {
-			$user_data = get_userdata( $user_id );
-			$role = $user_data->roles[0];
-			if (is_super_admin() && $this->debug ) {
-				echo 'Role in _wp_role: '.$role.'<br>';
-				var_dump($role);
-				echo '<br>';
-			}
-			if (!$role) 
-				$role = 'contributor';
-			$this->wp_role = $role;
-		}
-	}
-	
-	public function upgrade( ) {
-		switch( $this->type ) {
-			case 'nettredaksjon':
-				$this->wp_role = 'author';
-				break;
-			case 'arrangor':
-				$this->wp_role = 'editor';
-				break;
-		}
-		$this->_doWP_add_to_blog();
-	}
-	public function downgrade( ) {
-		switch( $this->type ) {
-			case 'nettredaksjon':
-				$this->wp_role = 'contributor';
-				break;
-			case 'arrangor':
-				$this->wp_role = 'ukm_produsent';
-				break;
-		}
-		$this->_doWP_add_to_blog();
-	}
-	
-	private function _doWP_user_update() {
-		global $blog_id;
-		if( empty( $this->password ) ) {
-			$this->password = UKM_ordpass();
-			wp_set_password( $this->password, $this->wp_id );
-		}
-		
-
-
-		update_user_meta( $this->wp_id, 'p_id', $this->p_id );
-		wp_update_user( array('ID' => $this->wp_id, 'description' => $this->description, 'role' => $this->wp_role ));
-		
-		if (!is_user_member_of_blog($this->wp_id, $blog_id) ) {
-			// Burde også sjekke at rettigheter stemmer
-			$this->_doWP_add_to_blog();
-
-			// $add = add_user_to_blog($blog_id, $this->wp_id, $this->wp_role);
-			// if(is_super_admin() && $this->debug ) {
-			// 	if ($add === true) {
-			// 		echo 'Lagt brukeren til blogg '.$blog_id.'<br>';
-			// 	}
-			// 	elseif (get_class($add) == 'WP_Error') {
-			// 		echo 'Feilet å legge til brukeren til blogg '.$blog_id.'<br>';		
-			// 		var_dump($add);	
-			// 		echo '<br>';
-			// 	}
-			// }
-		}
-
-		$test = new SQL("SELECT `p_id` FROM `#table` WHERE `p_id` = '#pid'", array('table'=>$this->table, 'pid'=>$this->p_id));
-		$res = $test->run('field','p_id');
-		
-		if( is_numeric( $res ) ) {
-			$sql = new SQLins('ukm_wp_deltakerbrukere', array('p_id' => $this->p_id ));
-		} else {
-			$sql = new SQLins('ukm_wp_deltakerbrukere');
-		}
-		$sql->add('p_id', $this->p_id);
-		$sql->add('username', $this->username);
-		$sql->add('email', $this->email);
-		$sql->add('password', $this->password);
-		$sql->add('wp_id', $this->wp_id);
-		
-		if (is_super_admin() && $this->debug )
-			echo $sql->debug();
-		$sql->run();
-
-	}
-}
-
-function USER_CREATE_ERROR( $usererror ) {
-	global $userErrors;
-	$userErrors[] = $usererror;
 }
