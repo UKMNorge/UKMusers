@@ -175,8 +175,11 @@ class UKMuser {
 		return true;
 	}
 
-	public function upgrade() {
-		switch ($this->role) {
+	public function upgrade($role = null) {
+		if (!$role)
+			$role = $this->role;
+
+		switch ($role) {
 			case 'contributor':
 				$new = 'author';
 				break;
@@ -189,7 +192,7 @@ class UKMuser {
 		}
 
 		if (!$new) {
-			$this->errors[] = array('danger' => 'Klarte ikke å oppgradere brukeren.');
+			$this->errors[] = array('danger' => 'Klarte ikke å oppgradere brukeren. Nåværende rolle er "'.$this->role.', prøvde å oppgradere til "'.$role.'".');
 			return false;
 		}
 		if(!$this->wp_id) {
@@ -256,17 +259,21 @@ class UKMuser {
 
 	# Function addToBlog()
 	# Legger til brukeren representert i dette objektet i en wordpress-blogg.
-	public function addToBlog( $blog_id = null ) {
+	public function addToBlog( $blog_id = null, $role = null ) {
 		if (!$blog_id) 
 			global $blog_id;
 
+		if(empty($this->role))
+			$this->_set_role($role);
+
 		if (empty($blog_id) || empty($this->wp_id) || empty($this->role) ) {
-			$errors[] = array('danger' => 'Forsøkte å legge brukeren til en blogg med manglende data!');
+			$this->errors[] = array('danger' => 'Forsøkte å legge brukeren til en blogg med manglende data!');
 			return false;
 		}
 	
 		// brukeren har alltid en wordpress-id, det fikses i create eller load.
 		$res = add_user_to_blog( $blog_id, $this->wp_id, $this->role );
+
 		if (true === $res) {
 			return true;
 		}
@@ -377,7 +384,7 @@ class UKMuser {
 	}
 
 	private function _set_role($type) {
-		$this->role = _getRoleFromType($type);
+		$this->role = $this->_getRoleFromType($type);
 	}
 
 	private function _getRoleFromType($type) {

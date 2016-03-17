@@ -68,13 +68,19 @@ foreach($innslag as $band_type => $bands) {
 						$user->create( $p_id, $username, $email, 'arrangor' );
 					}
 				}
-				/*echo '<br><b>Bruker:</b><br>';
-				var_dump($user);*/
+				#echo '<br><b>Bruker:</b><br>';
+				#var_dump($user);
 				if ($user->valid()) {
 					$ignoreList[] = $user->p_id;
 					// Nå som vi har en bruker med all info, sjekk at brukeren har rettigheter til denne bloggen
-					if( !$user->hasRightsToBlog( ) ) {
-						$user->addToBlog( $blog_id );
+					#echo '<br>Har rettigheter til blogg: '; var_dump($user->hasRightsToBlog($blog_id));
+					if( !$user->hasRightsToBlog( $blog_id ) ) {
+						$added = $user->addToBlog( $blog_id, 'arrangor' );
+						if (!$added) {
+							echo '<div class="alert alert-danger">Klarte ikke legge ny bruker til blogg, kontakt support med infoen under!<br>';
+							var_dump($user).'</div>';
+							echo '</div>';
+						}
 					}					
 				
 					if (isset($_GET['upgrade'] ) && $user->wp_id == $_GET['upgrade'] ) {
