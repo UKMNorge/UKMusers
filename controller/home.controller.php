@@ -1,5 +1,5 @@
 <?php
-require_once('UKM/innslag.class.php');
+/*require_once('UKM/innslag.class.php');
 require_once('UKM/inc/password.inc.php');
 
 $users = array();
@@ -22,4 +22,4 @@ foreach($innslag as $band_type => $bands) {
 	}
 }
 
-ksort( $TWIGdata['users'] );
+ksort( $TWIGdata['users'] );*/

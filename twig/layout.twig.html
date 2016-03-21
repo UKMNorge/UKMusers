@@ -8,7 +8,7 @@
 </div>
 <div class="clearfix"></div>
 <div class="UKM_tabs">
-	<a href="?page=UKMusers&action=tips" {{ tab_active == 'tips' ? 'class="active"' : ''}}>
+	<a href="?page=UKMusers&action=tips" {{ tab_active == 'tips' or tab_active is null ? 'class="active"' : ''}}>
 		<div>
 			<span class="tab_header">Tips</span>
 			<img src="http://ico.ukm.no/info-button-256.png" width="25"  border="0" /><br />
