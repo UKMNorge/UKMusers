@@ -124,7 +124,7 @@ class UKMuser {
 		/*echo '<br>wp_id: ';
 		var_dump($wp_id);*/
 		if (is_wp_error($wp_id)) {
-			$this->errors[] = array('danger' => 'Klarte ikke opprette Wordpress-bruker!');
+			$this->errors[] = array('danger' => 'Klarte ikke opprette Wordpress-bruker for bruker '.$username.' med e-post '.$email.' og p_id '.$p_id.'!');
 			return false;
 		}
 
@@ -159,7 +159,7 @@ class UKMuser {
 		$first_name = $person->g('p_firstname');
 		$last_name = $person->g('p_lastname');
 		$person->loadGEO();
-		$description = $first_name . ' ' . $lastname
+		$description = $first_name . ' ' . $last_name
 					. ' er ' . $person->alder() . ' år gammel og kommer fra ' 
 					. $person->g('kommune') . ' i ' . $person->get('fylke');
 

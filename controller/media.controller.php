@@ -80,11 +80,10 @@ foreach($innslag as $band_type => $bands) {
 	
 					$TWIGdata['users'][ $user->first_name .' '. $user->last_name ] = $user;
 				}
+				else {
+					$TWIGdata['errors'][] = $user->getErrors();
+				}
 			}
 		}
 	}
-}
-
-foreach($TWIGdata['users'] as $u) {
-	$TWIGdata['errors'] = $u->getErrors();
 }

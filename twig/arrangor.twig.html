@@ -2,12 +2,6 @@
 
 {% block content %}
 <div class="UKMwidth">
-	{% for error_arr in errors %}
-		{% for level, error in error_arr %}
-			<div class="alert alert-{{ level }}">{{ error }}</div>
-		{% endfor %}
-	{% endfor %}
-
 	<h3>Arrangør-brukere</h3>
 	<p class="lead">Alle arrangør- og scenetekniker-deltakere får automatisk bruker.<br /> Ingen blir varslet om dette, så arrangøren må selv distribuere passordene</p>
 	
@@ -70,5 +64,12 @@
 		</tr>
 		{% endfor %}
 	</table>
+	{% for error_arr in errors %}
+		{% for error_sub_arr in error_arr %}
+			{% for level, error in error_sub_arr %}
+				<div class="alert alert-{{ level }}">{{ error }}</div>
+			{% endfor %}
+		{% endfor %}
+	{% endfor %}
 </div>
 {% endblock %}

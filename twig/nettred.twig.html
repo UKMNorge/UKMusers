@@ -2,12 +2,6 @@
 
 {% block content %}
 <div class="UKMwidth">
-	{% for error_arr in errors %}
-		{% for level, error in error_arr %}
-			<div class="alert alert-{{ level }}">{{ error }}</div>
-		{% endfor %}
-	{% endfor %}
-
 	<h3>Nettredaksjonsbrukere</h3>
 	<p class="lead">Alle nettredaksjons- og filmdeltakere får automatisk bruker.<br /> Ingen blir varslet om dette, så arrangøren må selv distribuere passordene</p>
 	<div class="alert alert-info">
@@ -67,5 +61,16 @@
 		</tr>
 		{% endfor %}
 	</table>
+	{% if errors is not null %}
+		<h4>Følgende feil oppstod: </h4>
+		<p>Kontakt support med informasjonen under for hjelp.</p>
+		{% for error_arr in errors %}
+			{% for error_sub_arr in error_arr %}
+				{% for level, error in error_sub_arr %}
+					<div class="alert alert-{{ level }}">{{ error }}</div>
+				{% endfor %}
+			{% endfor %}
+		{% endfor %}
+	{% endif %}
 </div>
 {% endblock %}
