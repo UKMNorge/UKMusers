@@ -46,5 +46,6 @@ function UKMusers_scriptsandstyles() {
 	wp_enqueue_style('UKMwp_dashboard_css', plugin_dir_url( __FILE__ ) .'/UKMusers.css');
 	
 	wp_enqueue_script('WPbootstrap3_js');
+	wp_enqueue_script('UKMusers', plugin_dir_url(__FILE__) . '/UKMusers.jquery.js');
 	wp_enqueue_style('WPbootstrap3_css');
 }
