@@ -50,7 +50,7 @@ foreach($innslag as $band_type => $bands) {
 						
 						// Hvis brukernavnet ikke er ledig, finn neste ledige
 						if( !$user->isUsernameAvailable( $username ) ) {
-							$i=0;
+							$i=1;
 							while( !$user->isUsernameAvailable( $username.$i ) ) {
 								$i++;
 							}
