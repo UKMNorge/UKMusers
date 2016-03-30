@@ -24,6 +24,7 @@ function UKMusers() {
 	$TWIGdata = array();
 	
 	$_GET['action'] == isset( $_GET['action'] ) ? $_GET['action'] : 'home';
+	$TWIGdata['is_super_admin'] = is_super_admin();
 	$TWIGdata['tab_active'] = $_GET['action'];
 
 	switch( $_GET['action'] ) {

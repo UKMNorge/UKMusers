@@ -64,12 +64,21 @@
 		</tr>
 		{% endfor %}
 	</table>
-	{% for error_arr in errors %}
-		{% for error_sub_arr in error_arr %}
-			{% for level, error in error_sub_arr %}
-				<div class="alert alert-{{ level }}">{{ error }}</div>
+	{% if errors is not null %}
+		<h4>Følgende feil oppstod: </h4>
+		<p>Kontakt support med informasjonen under for hjelp.</p>
+		{% for error_arr in errors %}
+			{% for error_sub_arr in error_arr %}
+				{% for level, error in error_sub_arr %}
+					<div class="alert alert-{{ level }}">{{ error }}</div>
+				{% endfor %}
 			{% endfor %}
 		{% endfor %}
-	{% endfor %}
+		{% if is_super_admin %}
+			<div class="alert alert-info">
+				For å fikse brukere med feil (røde bokser nederst i listen), finn brukeren i ukm_wp_deltakerbrukere basert på e-post eller brukernavn. Oppdater p_id i databasen til den nye p_id'en som står i boksen, og oppdater siden.
+			</div>
+		{% endif %}
+	{% endif %}
 </div>
 {% endblock %}
