@@ -15,7 +15,7 @@ if(is_admin()) {
 	add_action('UKM_admin_menu', 'UKMusers_menu');
 }
 function UKMusers_menu() {
-	UKM_add_menu_page('monstring','Deltakerbrukere', 'Deltakerbrukere', 'editor', 'UKMusers', 'UKMusers', 'http://ico.ukm.no/user-blue-menu.png',95);
+	UKM_add_menu_page('content','Deltakerbrukere', 'Deltakerbrukere', 'editor', 'UKMusers', 'UKMusers', 'http://ico.ukm.no/user-blue-menu.png',95);
 	UKM_add_scripts_and_styles( 'UKMusers', 'UKMusers_scriptsandstyles' );	
 
 }
