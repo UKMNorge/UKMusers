@@ -22,6 +22,7 @@ class UKMuser {
 	var $email = null;
 	var $password = null;
 	var $description = null;
+	var $display_name = null;
 
 	# Variables fetched from participant_object
 	var $first_name = null;
@@ -111,7 +112,6 @@ class UKMuser {
 		require_once('UKM/inc/password.inc.php');
 		$password = UKM_ordpass();
 
-		//echo 'Input: '. $p_id .', '. $username.', '.$email.', '.$type.', '.$password;
 		// Verify that all info is here
 		global $blog_id;
 		if ( empty($p_id) || empty($username) || empty($email) || empty($password) || empty($blog_id) ) {
@@ -121,21 +121,13 @@ class UKMuser {
 
 		// Add to wordpress
 		$wp_id = wp_create_user($username, $password, $email);
-		/*echo '<br>wp_id: ';
-		var_dump($wp_id);*/
+		
 		if (is_wp_error($wp_id)) {
 			$this->errors[] = array('danger' => 'Klarte ikke opprette Wordpress-bruker for bruker '.$username.' med e-post '.$email.' og p_id '.$p_id.'!');
 			return false;
 		}
 
 		// Add to database
-		/*echo '<br>Fatal error skjer rett under denne';
-		var_dump($p_id);
-		var_dump($username);
-		var_dump($email);
-		var_dump($password);
-		var_dump($wp_id);
-		*/
 		$qry = new SQLins('ukm_wp_deltakerbrukere');
 		$qry->add('p_id', $p_id);
 		$qry->add('username', $username);
@@ -144,7 +136,7 @@ class UKMuser {
 		$qry->add('wp_id', $wp_id);
 
 		$res = $qry->run();
-		//echo '<br>Eller så gjorde det inte det';
+
 		if ($res != 1) {
 			$this->errors[] = array('danger' => 'Klarte ikke opprette ny lokal bruker! SQL: ' . $qry->debug() );
 			return false;
@@ -199,15 +191,9 @@ class UKMuser {
 
 		}
 
-		#echo '<br><h4>Upgrade</h4>';
-		#echo '$this->wp_id: ';
-		#echo $this->wp_id;
-		#echo '.<br>Til rolle: '. $new;
-		#echo '.<br> Result: ';
 		$updates['ID'] = $this->wp_id;
 		$updates['role'] = $new;
 		$res = wp_update_user($updates);
-		#var_dump($res);
 
 		if (is_wp_error($res))
 			return false;
@@ -236,22 +222,34 @@ class UKMuser {
 		$updates['ID'] = $this->wp_id;
 		$updates['role'] = $new;
 		$res = wp_update_user($updates);
-		#echo 'downgrade';
-		#var_dump($res);
+
 		if (is_wp_error($res))
 			return false;
 		$this->role = $new;
 		return true;
 	}
 
-	public function hasRightsToBlog( $blog_id = null) {
-		/*$blogs = get_blogs_of_user($this->p_id);
-		foreach ($blogs as $blog) {
-			if ($blog->userblog_id == $blog_id) {
-				return true;
-			}
+	public function updateDisplayName($first_name = null, $last_name = null) {
+		if ( null == $this->wp_id) {
+			return false;
 		}
-		return false;*/
+		if (null == $first_name) {
+			$first_name = $this->first_name;
+		}
+		if (null == $last_name) {
+			$last_name = $this->last_name;
+		}
+		// Update user nicename
+		$wp_user = new WP_User($this->wp_id);
+		$wp_user->display_name = $first_name . ' ' . $last_name;
+		$res = wp_update_user($wp_user);
+		if ( is_wp_error( $res ) ) {
+			return false;
+		}
+		return true;
+	}
+
+	public function hasRightsToBlog( $blog_id = null) {
 		if (!$blog_id) 
 			global $blog_id;
 		return is_user_member_of_blog($this->wp_id, $blog_id);
@@ -277,7 +275,7 @@ class UKMuser {
 		if (true === $res) {
 			return true;
 		}
-		var_dump($res); // $res is WP_Error object
+		// TODO: Add error?
 		return false;
 	}
 
@@ -318,16 +316,22 @@ class UKMuser {
 		$this->email = $res['email'];
 		$this->password = $res['password'];
 		$this->wp_id = $res['wp_id'];
-
-		// Hent rolle for denne bloggen
+	
+		// Hent wp-data for denne bloggen
 		$wp_user = new WP_User($this->wp_id);
 		$this->role = $wp_user->roles[0];
 		$this->description = get_user_meta($this->wp_id, 'description', true);
+		$this->display_name = $wp_user->display_name;
 
 		## Fetch data from person-object
 		$person = new person($p_id, false);
 		$this->first_name = $person->g('p_firstname');
 		$this->last_name = $person->g('p_lastname');
+
+		// For hver innlasting av bruker-objekt, sjekk at display name er satt rett i Wordpress, ettersom vi nå har mange med feil navn.
+		if ($this->display_name == $this->username) {
+			$this->updateDisplayName();
+		}
 
 		$this->valid = true;
 		return true;

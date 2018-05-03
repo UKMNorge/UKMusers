@@ -8,11 +8,7 @@ $is_lokalmonstring = $site_type == 'kommune';
 $users = array();
 $m = new monstring(get_option('pl_id'));
 $innslag = $m->innslag_btid();
-#echo 'site-type: '.get_option('site_type');
-/*echo '<pre>';
-var_dump($innslag);
-echo '</pre>';
-*/
+
 # A list of p_ids already added, so a person won't happen multiple times
 $ignoreList = array();
 $TWIGdata['users'] = array();
@@ -26,11 +22,9 @@ if( is_array( $innslag ) ) {
 					$inn->videresendte($m->g('pl_id'));
 				} 
 				$deltakere = $inn->personObjekter();
-				/*echo '<br><b>Deltakere</b>:';
-				var_dump($deltakere);
-				echo '<br>';*/
 	
 				foreach( $deltakere as $deltaker ) {
+
 					if (in_array($deltaker->g('p_id'), $ignoreList) ) {
 						continue;
 					}
@@ -63,9 +57,9 @@ if( is_array( $innslag ) ) {
 							$user->create( $p_id, $username, $email, 'nettredaksjon' );
 						}
 					}
-	
 					
 					if ($user->valid()) {
+
 						$ignoreList[] = $user->p_id;
 						// Nå som vi har en bruker med all info, sjekk at brukeren har rettigheter til denne bloggen
 						if( !$user->hasRightsToBlog( ) ) {
