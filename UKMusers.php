@@ -13,7 +13,14 @@ require_once('UKMusers.class.php');
 ## HOOK MENU AND SCRIPTS
 if(is_admin()) {
 	add_action('UKM_admin_menu', 'UKMusers_menu');
+	add_filter('UKM_admin_menu_conditions', 'UKMusers_menu_conditions');
 }
+function UKMusers_menu_conditions( $_CONDITIONS ) {
+	return array_merge( $_CONDITIONS, 
+		['UKMusers' => 'monstring_har_deltakere']
+	);
+}
+
 function UKMusers_menu() {
 	UKM_add_menu_page('content','Deltakerbrukere', 'Deltakerbrukere', 'editor', 'UKMusers', 'UKMusers', '//ico.ukm.no/user-blue-menu.png',95);
 	UKM_add_scripts_and_styles( 'UKMusers', 'UKMusers_scriptsandstyles' );	
