@@ -9,6 +9,7 @@ $users = array();
 $m = new monstring(get_option('pl_id'));
 $innslag = $m->innslag_btid();
 #echo 'site-type: '.get_option('site_type');
+global $blog_id;
 
 # A list of p_ids already added, so a person won't happen multiple times
 $ignoreList = array();
