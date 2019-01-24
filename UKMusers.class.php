@@ -59,7 +59,49 @@ class UKMuser {
 			return true;
 		}
 		return false;
-	}
+    }
+    
+    public function findAndUpdateByUsernameAndEmail() {
+        // find user by username and email
+        $wp_user_id = username_exists( $this->username );
+
+        // Kjent feil ga veldig mange brukere 1 i wordpress
+        // Prøver å unngå det nå
+        if( !$wp_user_id ) {
+            $wp_user_id = username_exists( $this->username .'1');
+        }
+
+        if( $wp_user_id ) {
+            $wp_user = get_user_by('ID', $wp_user_id);
+            // Både riktig e-post og riktig fake e-post er ok. Feelin' gen'rous.
+            if( $wp_user->user_email == $this->email || $wp_user->user_email == $this->p_id.'@deltaker.ukm.no' ) {
+                $sqlUpdateUserTable = new SQLins(
+                    'ukm_wp_deltakerbrukere',
+                    ['p_id' => $this->p_id]
+                );
+                $sqlUpdateUserTable->add('wp_id', $wp_user_id);
+                $res = $sqlUpdateUserTable->run();
+
+                if( $res ) {
+                    $this->wp_id = $wp_user_id;
+                    // update wp_user email
+                    if( $wp_user->user_email == $this->p_id.'@deltaker.ukm.no') {
+                        wp_update_user(
+                            [
+                                'ID' => $wp_user_id,
+                                'email' => $this->email
+                            ]
+                        );
+                    }
+
+                    $this->loadUserData( $this->p_id );
+                    return true;
+                }
+            }
+        }
+        
+        return false;
+    }
 
 	public function updatePID( $p_id ) {
 		// Når denne kjøres er data lastet inn, så $this->p_id er p_id som matcher brukernavn og e-post
@@ -68,7 +110,7 @@ class UKMuser {
 		$qry->add('p_id', $p_id);
 		$res = $qry->run();
 
-		if($res == 1) {
+		if($res) {
 			// Oppdatering funket, last inn brukerdata på nytt
 			$this->loadUserData($p_id);
 			return true;
@@ -271,11 +313,10 @@ class UKMuser {
 	
 		// brukeren har alltid en wordpress-id, det fikses i create eller load.
 		$res = add_user_to_blog( $blog_id, $this->wp_id, $this->role );
-
 		if (true === $res) {
 			return true;
 		}
-		// TODO: Add error?
+        $this->errors[] = ['danger' => 'Bruker '. $this->wp_id .' ble ikke lagt til blogg '. $blog_id .' som '. $this->role];
 		return false;
 	}
 
@@ -318,7 +359,11 @@ class UKMuser {
 		$this->wp_id = $res['wp_id'];
 	
 		// Hent wp-data for denne bloggen
-		$wp_user = new WP_User($this->wp_id);
+        $wp_user = new WP_User($this->wp_id);
+        if( $wp_user->ID == 0 ) {
+            return false;
+        }
+
 		$this->role = $wp_user->roles[0];
 		$this->description = get_user_meta($this->wp_id, 'description', true);
 		$this->display_name = $wp_user->display_name;

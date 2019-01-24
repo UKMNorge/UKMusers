@@ -35,7 +35,11 @@ if( is_array( $innslag ) ) {
 					if( !$user->findByPID( $p_id ) ) {
 						// Foreslå brukernavn basert på fornavn.etternavn
 						$username = $user->getSuggestedUsername($p_id);
-						if( $user->findByUsernameAndEmail( $username, $email ) ) {
+
+                        if( $user->findAndUpdateByUsernameAndEmail() ) {
+                            // never mind
+                        }
+						elseif( $user->findByUsernameAndEmail( $username, $email ) ) {
 							$user->updatePID( $p_id );	
 						} else {
 							

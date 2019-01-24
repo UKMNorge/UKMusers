@@ -32,7 +32,8 @@ if( is_array( $innslag ) ) {
 				foreach( $deltakere as $deltaker ) {
 					if (in_array($deltaker->g('p_id'), $ignoreList) ) {
 						continue;
-					}
+                    }
+                    #echo '<h1>'. $deltaker->g('p_firstname') .' '. $deltaker->g('p_lastname') .'</h1>';
 					$user = new UKMuser();
 					$p_id = $deltaker->g('p_id');
 					$email = $deltaker->g('p_email');
@@ -45,11 +46,17 @@ if( is_array( $innslag ) ) {
 						// Foreslå brukernavn basert på fornavn.etternavn
 						$username = $user->getSuggestedUsername($p_id);
 						//echo '<br>Foreslått brukernavn: '.$username;
-	
-						if( $user->findByUsernameAndEmail( $username, $email ) ) {
-							$user->updatePID( $p_id );	
-						} else {
-							
+    
+                        #echo '<h3>Fant ikke bruker '. $p_id .'</h3>'
+                        #    .'<p>'. $username .' ('. $email .')</p>';
+
+                        if( $user->findAndUpdateByUsernameAndEmail() ) {
+                            // never mind
+                        }
+						elseif( $user->findByUsernameAndEmail( $username, $email ) ) {
+                            $user->updatePID( $p_id );	
+                        }
+                        else {
 							// Hvis brukernavnet ikke er ledig, finn neste ledige
 							if( !$user->isUsernameAvailable( $username ) ) {
 								$i=1;
@@ -69,9 +76,14 @@ if( is_array( $innslag ) ) {
 							//echo '<br><b>Oppretter ny bruker:</b><br>';
 							$user->create( $p_id, $username, $email, 'arrangor' );
 						}
-					}
+					} else {
+                        #echo '<h3>Fant bruker '. $p_id .'</h3>'
+                        #    .'<p>'. $username .' ('. $email .')</p>';
+						
+                    }
 					#echo '<br><b>Bruker:</b><br>';
-					#var_dump($user);
+                    #var_dump($user);
+                    
 					if ($user->valid()) {
 						$ignoreList[] = $user->p_id;
 						// Nå som vi har en bruker med all info, sjekk at brukeren har rettigheter til denne bloggen
@@ -79,9 +91,10 @@ if( is_array( $innslag ) ) {
 						if( !$user->hasRightsToBlog( $blog_id ) ) {
 							$added = $user->addToBlog( $blog_id, 'arrangor' );
 							if (!$added) {
-								echo '<div class="alert alert-danger">Klarte ikke legge ny bruker til blogg, kontakt support med infoen under!<br>';
-								var_dump($user).'</div>';
-								echo '</div>';
+                                echo '<div class="alert alert-danger">'
+                                    .'Klarte ikke legge ny bruker til blogg, kontakt support med infoen under!<br />'
+                                    . var_export( $user->errors, true )
+                                    .'</div>';
 							}
 						}					
 					
