@@ -2,11 +2,11 @@
 require_once('UKM/innslag.class.php');
 require_once('UKM/inc/password.inc.php');
 
-$site_type = get_option('site_type');
-$is_lokalmonstring = $site_type == 'kommune';
 
 $users = array();
 $m = new monstring(get_option('pl_id'));
+$site_type = get_option('site_type');
+$is_lokalmonstring = $site_type == 'kommune';
 $innslag = $m->innslag_btid();
 #echo 'site-type: '.get_option('site_type');
 global $blog_id;
