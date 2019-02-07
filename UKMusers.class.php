@@ -221,7 +221,7 @@ class UKMuser {
 				$new = 'editor';
 				break;
 			default:
-				$new = null;
+				$new = false;
 				break;
 		}
 
@@ -230,15 +230,18 @@ class UKMuser {
 			return false;
 		}
 		if(!$this->wp_id) {
-
+            $this->errors[] = array('danger' => 'Klarte ikke å oppgradere brukeren. Mangler WP_ID.');
+			return false;
 		}
 
 		$updates['ID'] = $this->wp_id;
 		$updates['role'] = $new;
 		$res = wp_update_user($updates);
 
-		if (is_wp_error($res))
-			return false;
+		if( is_wp_error($res) ){
+            $this->errors[] = array('danger' => 'Klarte ikke å oppgradere brukeren. WP-error: '. var_export( $res, true ) );
+            return false;
+        }
 		$this->role = $new;
 		return true;
 	}
@@ -252,21 +255,28 @@ class UKMuser {
 				$new = 'ukm_produsent';
 				break;
 			default:
-				$new = null;
+				$new = false;
 				break;
 		}
 
 		if (!$new) {
-			$this->errors[] = array('danger' => 'Klarte ikke å oppgradere brukeren.');
+			$this->errors[] = array('danger' => 'Klarte ikke å nedgradere brukeren. Nåværende rolle er "'.$this->role.', prøvde å nedgradere til "'.$role.'".');
+			return false;
+        }
+        if(!$this->wp_id) {
+            $this->errors[] = array('danger' => 'Klarte ikke å nedgradere brukeren. Mangler WP_ID.');
 			return false;
 		}
+
 
 		$updates['ID'] = $this->wp_id;
 		$updates['role'] = $new;
 		$res = wp_update_user($updates);
 
-		if (is_wp_error($res))
-			return false;
+		if( is_wp_error($res) ) {
+            $this->errors[] = array('danger' => 'Klarte ikke å nedgradere brukeren. WP-error: '. var_export( $res, true ) );
+            return false;
+        }
 		$this->role = $new;
 		return true;
 	}
