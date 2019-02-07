@@ -1,0 +1,23 @@
+{% extends "layout.html.twig" %}
+
+{% block content %}
+    <div class="UKMwidth">
+        <h3>Arrangør-brukere</h3>
+        
+        <ol class="list-group">
+            <li class="list-group-item">
+                <b>Arrangør-brukere</b>
+                <br />
+                Arrangørbrukerne har full tilgang til arrangørsystemet, på lik linje med lokalkontakten.
+                <p><b>OBS:</b> Arrangørbrukerne har også tilgang til denne modulen, og kan oppgradere andre arrangører</p>
+            </li>
+            <li class="list-group-item">
+                <b>Rapportbrukere</b>
+                <br />
+                Rapportbrukerne har tilgang til rapport-, materiell- og playbackmodulen.
+            </li>
+        </ol>
+        
+        {% embed "list.html.twig" with {'title_upgrade': 'arrangør-bruker', 'title_downgrade': 'rapport-bruker', 'pakrevd_sjanger': 'arrangør eller sceneteknikk' } %}{% endembed %}
+    </div>
+{% endblock %}

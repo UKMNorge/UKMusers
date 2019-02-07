@@ -209,77 +209,31 @@ class UKMuser {
 		return true;
 	}
 
-	public function upgrade($role = null) {
-		if (!$role)
-			$role = $this->role;
-
-		switch ($role) {
-			case 'contributor':
-				$new = 'author';
-				break;
-			case 'ukm_produsent':
-				$new = 'editor';
-				break;
-			default:
-				$new = false;
-				break;
-		}
-
-		if (!$new) {
-			$this->errors[] = array('danger' => 'Klarte ikke å oppgradere brukeren. Nåværende rolle er "'.$this->role.', prøvde å oppgradere til "'.$role.'".');
-			return false;
-		}
-		if(!$this->wp_id) {
-            $this->errors[] = array('danger' => 'Klarte ikke å oppgradere brukeren. Mangler WP_ID.');
+    public function updateRole( $role, $direction ) {
+        if(!$this->wp_id) {
+            $this->errors[] = array('danger' => 'Klarte ikke å '. $direction .' brukeren. Mangler WP_ID.');
 			return false;
 		}
 
 		$updates['ID'] = $this->wp_id;
-		$updates['role'] = $new;
+		$updates['role'] = $role;
 		$res = wp_update_user($updates);
 
 		if( is_wp_error($res) ){
-            $this->errors[] = array('danger' => 'Klarte ikke å oppgradere brukeren. WP-error: '. var_export( $res, true ) );
+            $this->errors[] = array('danger' => 'Klarte ikke å '. $direction .' brukeren. WP-error: '. var_export( $res, true ) );
             return false;
         }
-		$this->role = $new;
+		$this->role = $role;
 		return true;
+    }
+
+	public function upgrade( $role ) {
+        return $this->updateRole( $role, 'oppgradere' );
 	}
 
-	public function downgrade() {
-		switch ($this->role) {
-			case 'author':
-				$new = 'contributor';
-				break;
-			case 'editor':
-				$new = 'ukm_produsent';
-				break;
-			default:
-				$new = false;
-				break;
-		}
-
-		if (!$new) {
-			$this->errors[] = array('danger' => 'Klarte ikke å nedgradere brukeren. Nåværende rolle er "'.$this->role.', prøvde å nedgradere til "'.$role.'".');
-			return false;
-        }
-        if(!$this->wp_id) {
-            $this->errors[] = array('danger' => 'Klarte ikke å nedgradere brukeren. Mangler WP_ID.');
-			return false;
-		}
-
-
-		$updates['ID'] = $this->wp_id;
-		$updates['role'] = $new;
-		$res = wp_update_user($updates);
-
-		if( is_wp_error($res) ) {
-            $this->errors[] = array('danger' => 'Klarte ikke å nedgradere brukeren. WP-error: '. var_export( $res, true ) );
-            return false;
-        }
-		$this->role = $new;
-		return true;
-	}
+	public function downgrade( $role ) {
+        return $this->updateRole( $role, 'oppgradere' );
+    }
 
 	public function updateDisplayName($first_name = null, $last_name = null) {
 		if ( null == $this->wp_id) {
