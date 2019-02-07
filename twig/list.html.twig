@@ -12,7 +12,7 @@
             {% elseif user.role == 'ukm_produsent' %}
                 <p class="label label-success">Rapport-bruker</p>
             {% else %}
-                <p class="label label-danger">Feil har oppstått. Oppgrader og/eller nedgrader for å løse feilen</p>
+                <p class="label label-danger">Feil har oppstått. Opp-/nedgrader for å løse problemet</p>
             {% endif %}
         </td>
         <td class="col-xs-12 col-sm-4 col-md-4">
@@ -26,13 +26,14 @@
                 <span class="caret"></span>
             </button>
             <ul class="dropdown-menu" role="menu" aria-labelledby="actionsUser_{{ user.wp_id }}">
-                {% if user.role in ['author','editor'] %}
-                    <li role="presentation">
-                        <a href="?page=UKMusers&action={{ GET('action') }}&downgrade={{ user.wp_id }}">Nedgrader til {{ title_downgrade }}</a>
-                    </li>
-                {% else %}
+                {% if user.role not in ['author','editor'] %}
                     <li role="presentation">
                         <a href="?page=UKMusers&action={{ GET('action') }}&upgrade={{ user.wp_id }}">Oppgrader til {{ title_upgrade }}</a>
+                    </li>
+                {% endif %}
+                {% if user.role not in ['contributor', 'ukm_produsent'] %}
+                    <li role="presentation">
+                        <a href="?page=UKMusers&action={{ GET('action') }}&downgrade={{ user.wp_id }}">Nedgrader til {{ title_downgrade }}</a>
                     </li>
                 {% endif %}
             </ul>
