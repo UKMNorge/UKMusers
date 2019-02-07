@@ -2,7 +2,7 @@
 
 <div class="clearfix"></div>
 <div class="UKM_tabs">
-	<a href="?page=UKMusers&action=home" {{ GET('action') == 'home' or GET('action') is null ? 'class="active"' : ''}}>
+	<a href="?page=UKMusers&action=home" {{ GET('action') == 'home' or not GET('action') ? 'class="active"' : ''}}>
 		<div>
 			<span class="tab_header">Tips</span>
 			<img src="//ico.ukm.no/info-button-256.png" width="25"  border="0" /><br />
