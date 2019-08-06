@@ -16,28 +16,23 @@ class UKMusers extends UKMWPmodul {
     public static $path_plugin = null;
     
     public static function hook() {
-        add_action('UKM_admin_menu', ['UKMusers','meny']);
-        add_filter('UKM_admin_menu_conditions', ['UKMusers', 'meny_conditions']);
+        add_action('admin_menu', ['UKMusers','meny'], 300);
     }
 
     public static function meny() {
-        UKM_add_menu_page(
-            'content',
-            'Deltakerbrukere',
-            'Deltakerbrukere',
+        $page = add_submenu_page(
+            'UKMmonstring',
+            'Administratorer',
+            'Administratorer',
             'editor',
             'UKMusers',
             ['UKMusers','renderAdmin'],
-            '//ico.ukm.no/user-blue-menu.png',
             95
-        );
-        UKM_add_scripts_and_styles( ['UKMusers', 'renderAdmin'], ['UKMusers','scriptsandstyles'] );
-    }
-
-    public static function meny_conditions( $_CONDITIONS ) {
-        return array_merge( $_CONDITIONS, 
-            ['UKMusers' => 'monstring_har_deltakere']
-        );
+		);
+		add_action(
+			'admin_print_styles-' . $page,
+			['UKMusers','scriptsandstyles']
+		);
     }
 
     public static function scriptsandstyles() {	
