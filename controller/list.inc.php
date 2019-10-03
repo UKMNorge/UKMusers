@@ -1,5 +1,9 @@
 <?php
-require_once('UKM/innslag.class.php');
+
+use UKMNorge\Arrangement\Arrangement;
+use UKMNorge\Innslag\Typer;
+
+require_once('UKM/Autoloader.php');
 require_once('UKM/inc/password.inc.php');
 
 global $blog_id;
@@ -9,9 +13,9 @@ $added = [];
 $users = [];
 $errors = [];
 
-$monstring = new monstring_v2( get_option('pl_id') );
+$monstring = new Arrangement( get_option('pl_id') );
 $alle_innslag = $monstring->getInnslag()::filterByType( 
-    innslag_typer::getByName( DELTAKERBRUKER_TYPE ), 
+    Typer::getByName( DELTAKERBRUKER_TYPE ), 
     $monstring->getInnslag()->getAll()
 );
 
