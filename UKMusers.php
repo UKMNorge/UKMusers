@@ -12,7 +12,7 @@ require_once('UKMuser.class.php');
 require_once('UKM/wp_modul.class.php');
 
 class UKMusers extends UKMWPmodul {
-    public static $action = 'home';
+    public static $action = 'snart';
     public static $path_plugin = null;
     
     public static function hook() {
