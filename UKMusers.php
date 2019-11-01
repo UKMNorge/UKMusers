@@ -20,6 +20,7 @@ class UKMusers extends UKMWPmodul {
     }
 
     public static function meny() {
+        /*
         $page = add_submenu_page(
             'UKMmonstring',
             'Administratorer',
@@ -32,7 +33,8 @@ class UKMusers extends UKMWPmodul {
 		add_action(
 			'admin_print_styles-' . $page,
 			['UKMusers','scriptsandstyles']
-		);
+        );
+        */
     }
 
     public static function scriptsandstyles() {	
