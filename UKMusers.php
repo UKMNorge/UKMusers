@@ -66,6 +66,10 @@ class UKMusers extends UKMWPmodul {
         wp_enqueue_style('WPbootstrap3_css');
     }
 
+    /**
+     * Tegner opp GUI for administrering av Deltakerbrukere. Kaller createLogins internt, så vil prøve å opprette brukere som ikke finnes ved pageload.
+     * 
+     */
     public static function administrerDeltaBrukere() {
         $arrangement = new Arrangement(get_option('pl_id'));
         $innslagListe = static::createLoginsForParticipantsInArrangement($arrangement);
@@ -73,6 +77,7 @@ class UKMusers extends UKMWPmodul {
         echo '<pre>';
         var_dump($innslagListe);
         echo '</pre>';
+        # TODO: Render GUI.
     }
     
     /**
@@ -196,9 +201,8 @@ class UKMusers extends UKMWPmodul {
                     continue;
                 }
                 
-                if( User::erAktiv( $user->getId() )) {
-                    # Alt er OK, vi kan gå til neste i listen nå. Sett en melding om at bruker er opprettet OK
-                    $person->setAttr('ukmusers_status', 'success')->setAttr('ukmusers_message', "Opprettet arrangørsystem-bruker for ".$person->getNavn());
+                if( User::erAktiv($user->getId()) ) {
+                    # Alt er OK og vi kan gå til neste i listen.
                     continue;
                 }
     
@@ -254,7 +258,3 @@ function UKMusers_brukere_admin() {
     UKMusers::administrerDeltaBrukere();
 
 }
-
-
-
-//	$TWIGdata['is_super_admin'] = is_super_admin();
