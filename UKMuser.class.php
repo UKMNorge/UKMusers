@@ -42,7 +42,7 @@ class UKMuser {
 		return $this->loadUserData($p_id);
 	}
 
-	public function findByUsernameAndEmail( $username, $email ) {
+	public static function findByUsernameAndEmail( $username, $email ) {
 		# Sjekk om brukernavn OG e-post finnes i databasen.
 		$qry = new SQL("SELECT * FROM `#table`
 						WHERE `p_username` = '#username'
