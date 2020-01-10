@@ -1,11 +1,11 @@
 <?php
 /* 
 Plugin Name: UKMusers
-Plugin URI: http://www.ukm-norge.no
-Description: Genererer passordliste for nettredaksjon og arrangører
-Author: UKM Norge / M Mandal 
-Version: 2.0 
-Author URI: http://www.ukm-norge.no
+Plugin URI: http://www.github.com/UKMNorge/UKMusers
+Description: Genererer innlogging for nettredaksjon og arrangører
+Author: UKM Norge / M Mandal / A Hustad
+Version: 3.0 
+Author URI: http://www.github.com/UKMNorge
 */
 
 require_once("UKM/Autoloader.php");
@@ -20,11 +20,11 @@ use UKMNorge\Wordpress\Blog;
 use UKMNorge\Wordpress\WriteUser;
 use UKMNorge\Innslag\Typer\Type;
 
-require_once('UKMuser.class.php');
+#require_once('UKMuser.class.php');
 require_once('UKM/wp_modul.class.php');
 
 class UKMusers extends UKMWPmodul {
-    public static $action = 'snart';
+    public static $action = 'userlist';
     public static $path_plugin = null;
     
     public static function hook() {
@@ -33,7 +33,6 @@ class UKMusers extends UKMWPmodul {
     }
 
     public static function meny() {
-
         // Knapp i menyen
         $page_deltakerbruker = add_submenu_page(
             'UKMdeltakere', # TODO: Endre til Nettside når du vet hvilken slug det er 
@@ -41,7 +40,7 @@ class UKMusers extends UKMWPmodul {
             'Brukere',
             'editor',
             'UKMusers_brukere_admin',
-            'UKMusers_brukere_admin'
+            ['UKMusers','renderAdmin']
         );
 
         /*
@@ -53,31 +52,18 @@ class UKMusers extends UKMWPmodul {
             'UKMusers',
             ['UKMusers','renderAdmin'],
             95
-		);
-		add_action(
-			'admin_print_styles-' . $page,
-			['UKMusers','scriptsandstyles']
         );
         */
+		add_action(
+			'admin_print_styles-' . $page_deltakerbruker,
+			['UKMusers','scriptsandstyles']
+        );
+    
     }
 
     public static function scriptsandstyles() {	
         wp_enqueue_script('WPbootstrap3_js');
         wp_enqueue_style('WPbootstrap3_css');
-    }
-
-    /**
-     * Tegner opp GUI for administrering av Deltakerbrukere. Kaller createLogins internt, så vil prøve å opprette brukere som ikke finnes ved pageload.
-     * 
-     */
-    public static function administrerDeltaBrukere() {
-        $arrangement = new Arrangement(get_option('pl_id'));
-        $innslagListe = static::createLoginsForParticipantsInArrangement($arrangement);
-        
-        echo '<pre>';
-        var_dump($innslagListe);
-        echo '</pre>';
-        # TODO: Render GUI.
     }
     
     /**
@@ -158,7 +144,7 @@ class UKMusers extends UKMWPmodul {
 
         # Arrangør- og medieinnslag har kun èn deltaker, så vi slipper å loope hele getAll().
         foreach( $innslagListe as $innslag ) {
-            $person = $innslag->getPersoner()->getAll()[0];
+            $person = $innslag->getPersoner()->getSingle();
             # Skip om vi allerede har jobbet med denne personen ila denne loopen.
             if( in_array($person->getId(), $duplikatListe) ) {
                 continue;
@@ -166,7 +152,7 @@ class UKMusers extends UKMWPmodul {
             $duplikatListe[] = $person->getId();
             # Legg til innslaget i filtrert liste. Kunne vært løst mer elegant om vi hadde compare-funksjoner
             $filtrerteInnslag[] = $innslag;
-
+ 
             # Try/Catch for å fange errors, men likevel få prøve neste innslag på lista. Har ikke detaljerte feilmeldinger (ie catcher alle exceptions under) pga fare for spaghetti. Blæ.
             try {
                 # Se om denne personen har en wordpress-bruker basert på p_id
@@ -180,6 +166,7 @@ class UKMusers extends UKMWPmodul {
                     $username = "deltaker_".$person->getId();
                     $user = WriteUser::createParticipantUser($username, $person->getEpost(), $person->getFornavn(), $person->getEtternavn(), $person->getMobil(), $person->getId());
                     $user = WriteUser::save($user, false);
+                    $person->setAttr('ukmusers_status', 'success')->setAttr('ukmusers_message', "Opprettet ny bruker for ".$person->getNavn().".");
                 }
                 
                 # Har vi ikke fått bruker til nå gir vi opp:
@@ -192,7 +179,8 @@ class UKMusers extends UKMWPmodul {
                 # Sjekk om brukeren er relatert til denne bloggen.
                 if ( !Blog::harBloggBruker(get_current_blog_id(), $user) ) {
                     # Brukeren mangler relasjon til bloggen eller er inaktiv, prøv å legg den til.
-                    Blog::leggTilBruker(get_current_blog_id(), $user->getId(), self::getRolleForInnslagType( $innslag->getType() ) );
+                    Blog::leggTilBruker(get_current_blog_id(), $user->getId(), User::getRolleForInnslagType( $innslag->getType() ) );
+                    $person->setAttr('ukmusers_status', 'success')->setAttr('ukmusers_message', "Koblet brukeren til bloggen.");
                 }
 
                 # Mangler vi fortsatt relasjon til bloggen, gir vi opp:
@@ -201,7 +189,7 @@ class UKMusers extends UKMWPmodul {
                     continue;
                 }
                 
-                if( User::erAktiv($user->getId()) ) {
+                if( WordpressUser::erAktiv($user->getId()) ) {
                     # Alt er OK og vi kan gå til neste i listen.
                     continue;
                 }
@@ -218,17 +206,6 @@ class UKMusers extends UKMWPmodul {
         }        
 
         return $filtrerteInnslag;
-    }
-
-
-    private static function getRolleForInnslagType( Type $type ) {
-        if( $type->getKey() == 'arrangor' ) {
-            return 'ukm_produsent';
-        } elseif( $type->getKey() == 'nettredaksjon' ) {
-            return 'contributor';
-        } else {
-            throw new Exception("Denne innslagstypen skal ikke ha rettigheter til arrangørsystemet.");
-        }
     }
 }
 
@@ -254,7 +231,5 @@ if(is_admin()) {
 }
 
 function UKMusers_brukere_admin() {
-    
     UKMusers::administrerDeltaBrukere();
-
 }

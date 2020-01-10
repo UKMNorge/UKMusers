@@ -1,0 +1,38 @@
+<h3>Deltakere som har innlogging til ditt arrangørsystem</h3>
+<p>Her finner du oversikten over alle deltakere som har mulighet til å skrive nyhetssaker, laste opp bilder og film og hente ut rapporter. 
+    Du kan velge å gi noen av de opphøyede rettigheter, for å godkjenne artikler skrevet av de andre.</p>
+<p><b>Deltakerne logger inn ved å gå inn på samme sted som de meldte seg på (<a href="https://delta.{{ UKM_HOSTNAME }}/">https://delta.{{ UKM_HOSTNAME }}/</a>), og trykke på knappen "Logg inn til arrangørsystemet".</b></p>
+<p>Knappen er kun synlig etter at påmeldingen din er stengt.</p>
+
+<ul class="list-group">
+    {% for innslag in filtrerteInnslag %}
+        {% set person = innslag.getPersoner().getAll()|first %}
+        <li class="list-group-item">
+            <div class="col-xs-8">
+                <h5>{{ person.getNavn() }}</h5>
+                <p>{{ innslag.getType().getNavn() }}<br />
+                {{ innslag.getKommune().getNavn() }}</p>
+                {% if person.hasAttr('ukmusers_status') %}
+                    <div class="alert alert-{{ person.getAttr('ukmusers_status') }}">
+                        {{ person.getAttr('ukmusers_message') }}
+                    </div>
+                {% endif %}
+            </div>
+            <div class="col-xs-2">
+                {# Vis Oppgrader / Nedgrader-knappene om de har en faktisk bruker #}
+                {% if person.harWordpressBruker() %}
+                    {% set wp_bruker = person.hentWordpressBruker() %}
+                    {% if not wp_bruker.erOppgradert() %}
+                        <a href="#" class="btn btn-success btn-sm btn-ukm">Oppgrader</a>
+                    {% else %}
+                        <a href="#" class="btn btn-primary btn-sm btn-ukm">Nedgrader</a>
+                    {% endif %}
+                {% endif %}
+            </div>
+            <div class="clearfix"></div>
+            {#<div>
+                {{ dump(person) }}
+            </div>#}
+        </li>
+    {% endfor %}
+</ul>
