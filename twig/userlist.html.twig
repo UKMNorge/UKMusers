@@ -1,0 +1,57 @@
+<div class="container-fluid">
+	<div class="row">
+		<div class="col-xs-12">
+			<h3>Deltakeres tilgang til ditt arrangørsystem</h3>
+            {% include "wp_modul.flashbag.html.twig" %}
+			<p>Her finner du oversikten over alle deltakere som har mulighet til å skrive nyhetssaker, laste opp bilder og film og hente ut rapporter. 
+					    Du kan velge å gi noen av de opphøyede rettigheter, for å godkjenne artikler skrevet av de andre.</p>
+			<p>
+				Deltakerne logger inn samme sted som de meldte seg på 
+				    (<a href="https://delta.{{ UKM_HOSTNAME }}/">https://delta.{{ UKM_HOSTNAME }}/</a>), 
+					    og trykke på knappen "Logg inn til arrangørsystemet". 
+					    Knappen er kun synlig etter at påmeldingen din er stengt.
+			</p>
+		</div>
+		<div class="col-xs-12">
+			<ul class="list-group">
+				{% for innslag in filtrerteInnslag %}
+					{% set person = innslag.getPersoner().getAll()|first %}
+					<li class="list-group-item">
+						<div class="col-xs-8">
+							<h5>{{ person.getNavn() }}</h5>
+							<p>
+								{{ innslag.getType().getNavn() }} |
+								{{ innslag.getKommune().getNavn() }}
+							</p>
+							{% if person.hasAttr('ukmusers_status') %}
+								<div class="alert alert-{{ person.getAttr('ukmusers_status') }}">
+									{{ person.getAttr('ukmusers_message') }}
+								</div>
+							{% endif %}
+						</div>
+						<div
+							class="col-xs-4" align="right">
+							{# Vis Oppgrader / Nedgrader-knappene om de har en faktisk bruker #}
+							{% if person.harWordpressBruker() %}
+								{% set wp_bruker = person.hentWordpressBruker() %}
+                                {% set baseLink = '?page='~ GET('page') ~'&innslag='~ innslag.getId() %}{# person er implisitt da dette er enkeltpersonInnslag &person={{person.getId()}}' %#}
+
+								{% if wp_bruker.harTilgangTilBlogg(blog_id) %}
+									<a href="{{baseLink}}&subaction=remove" class="btn btn-danger btn-sm btn-ukm">Fjern tilgang</a>
+                                    {% if not wp_bruker.erOppgradert() %}
+                                        <a href="{{baseLink}}&subaction=upgrade" class="btn btn-success btn-sm btn-ukm">Oppgrader</a>
+                                    {% else %}
+                                        <a href="{{baseLink}}&subaction=downgrade" class="btn btn-primary btn-sm btn-ukm">Nedgrader</a>
+                                    {% endif %}
+								{% else %}
+									<a href="{{baseLink}}&subaction=add" class="btn btn-primary btn-sm btn-ukm">Gi tilgang</a>
+								{% endif %}
+							{% endif %}
+						</div>
+						<div class="clearfix"></div>
+					</li>
+				{% endfor %}
+			</ul>
+		</div>
+	</div>
+</div>
