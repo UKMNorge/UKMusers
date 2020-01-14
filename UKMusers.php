@@ -9,6 +9,7 @@ Author URI: http://www.github.com/UKMNorge
 */
 
 require_once("UKM/Autoloader.php");
+
 use UKMNorge\Wordpress\User as WordpressUser;
 use UKMNorge\Wordpress\LoginToken;
 use UKMNorge\Database\SQL\Query;
@@ -23,49 +24,40 @@ use UKMNorge\Innslag\Typer\Type;
 #require_once('UKMuser.class.php');
 require_once('UKM/wp_modul.class.php');
 
-class UKMusers extends UKMWPmodul {
+class UKMusers extends UKMWPmodul
+{
     public static $action = 'userlist';
     public static $path_plugin = null;
-    
-    public static function hook() {
-        add_action('admin_menu', ['UKMusers','meny'], 300);
-        
+
+    public static function hook()
+    {
+        add_action('admin_menu', ['UKMusers', 'meny'], 300);
     }
 
-    public static function meny() {
+    public static function meny()
+    {
         // Knapp i menyen
         $page_deltakerbruker = add_submenu_page(
             'UKMdeltakere', # TODO: Endre til Nettside når du vet hvilken slug det er 
-            'Brukere', 
+            'Brukere',
             'Brukere',
             'editor',
             'UKMusers_brukere_admin',
-            ['UKMusers','renderAdmin']
+            ['UKMusers', 'renderAdmin']
         );
 
-        /*
-        $page = add_submenu_page(
-            'UKMmonstring',
-            'Administratorer',
-            'Administratorer',
-            'editor',
-            'UKMusers',
-            ['UKMusers','renderAdmin'],
-            95
+        add_action(
+            'admin_print_styles-' . $page_deltakerbruker,
+            ['UKMusers', 'scriptsandstyles']
         );
-        */
-		add_action(
-			'admin_print_styles-' . $page_deltakerbruker,
-			['UKMusers','scriptsandstyles']
-        );
-    
     }
 
-    public static function scriptsandstyles() {	
+    public static function scriptsandstyles()
+    {
         wp_enqueue_script('WPbootstrap3_js');
         wp_enqueue_style('WPbootstrap3_css');
     }
-    
+
     /**
      * Logger inn en bruker programmatisk. 
      * Sjekker token mot token-tabell og at forespurt bruker finnes i whitelist.
@@ -78,11 +70,12 @@ class UKMusers extends UKMWPmodul {
      * 
      * Test URL: https://ukm.dev/autologin/?wp_id=1&token_id=1&token=22
      */
-    public static function loginFromDelta( Int $wp_id, Int $token_id, String $secret ) {
-        
+    public static function loginFromDelta(Int $wp_id, Int $token_id, String $secret)
+    {
+
         // Sjekk token
         try {
-            if( $wp_id != LoginToken::use($token_id, $secret) ) {
+            if ($wp_id != LoginToken::use($token_id, $secret)) {
                 # Token already used? Does not exist? Etc.
                 return false;
             }
@@ -93,34 +86,34 @@ class UKMusers extends UKMWPmodul {
 
         // Sjekk at bruker-IDen finnes i ukm_delta_wp_user-tabell - så folk ikke kan autologge inn til UKM Norge-brukerne etc.
         $sql = new Query("SELECT `wp_id` FROM ukm_delta_wp_user WHERE `wp_id` = '#wp_id'", ['wp_id' => $wp_id]);
-        
+
         $wordpressUserId = $sql->getField();
-        if ( NULL == $wordpressUserId ) {
+        if (NULL == $wordpressUserId) {
             die("Failed to find wordpress user in whitelist.");
             return false;
         }
 
         // Finn bruker fra ID
-        $user = WordpressUser::loadById($wordpressUserId);
+        $user = WordpressUser::loadById(intval($wordpressUserId));
 
-        if ( is_user_logged_in() ) {
+        if (is_user_logged_in()) {
             wp_logout();
         }
-        
-        add_filter( 'authenticate', 'allow_programmatic_login', 10, 3 );	// hook in earlier than other callbacks to short-circuit them
-        $user = wp_signon( array( 'user_login' => $user->getUsername() ) );
-        remove_filter( 'authenticate', 'allow_programmatic_login', 10, 3 );
-        
-        if ( is_a( $user, 'WP_User' ) ) {
-            wp_set_current_user( $user->ID, $user->user_login );
-            
-            if ( is_user_logged_in() ) {
+
+        add_filter('authenticate', 'allow_programmatic_login', 10, 3);    // hook in earlier than other callbacks to short-circuit them
+        $user = wp_signon(array('user_login' => $user->getUsername()));
+        remove_filter('authenticate', 'allow_programmatic_login', 10, 3);
+
+        if (is_a($user, 'WP_User')) {
+            wp_set_current_user($user->ID, $user->user_login);
+
+            if (is_user_logged_in()) {
                 return true;
             }
         }
 
         return false;
-    } 
+    }
 
     /**
      * Oppretter wordpress-innlogging for deltakerbrukere for et gitt arrangement.
@@ -130,7 +123,8 @@ class UKMusers extends UKMWPmodul {
      * @param Arrangement $place
      * @return Array<Innslag> - Alle innslagene som er jobbet med, uten duplikater. Personer er merket med eventuelle feil i midlertidig lagring i attr.
      */
-    public static function createLoginsForParticipantsInArrangement( Arrangement $place ) { 
+    public static function createLoginsForParticipantsInArrangement(Arrangement $place)
+    {
         # Finn alle medie-innslag
         $medieInnslag = $place->getInnslag()->getAllByType(Typer::getByKey("nettredaksjon"));
         # Finn alle arrangør-innslag
@@ -143,67 +137,53 @@ class UKMusers extends UKMWPmodul {
         $filtrerteInnslag = array();
 
         # Arrangør- og medieinnslag har kun èn deltaker, så vi slipper å loope hele getAll().
-        foreach( $innslagListe as $innslag ) {
+        foreach ($innslagListe as $innslag) {
             $person = $innslag->getPersoner()->getSingle();
             # Skip om vi allerede har jobbet med denne personen ila denne loopen.
-            if( in_array($person->getId(), $duplikatListe) ) {
+            if (in_array($person->getId(), $duplikatListe)) {
                 continue;
             }
             $duplikatListe[] = $person->getId();
             # Legg til innslaget i filtrert liste. Kunne vært løst mer elegant om vi hadde compare-funksjoner
             $filtrerteInnslag[] = $innslag;
- 
+
             # Try/Catch for å fange errors, men likevel få prøve neste innslag på lista. Har ikke detaljerte feilmeldinger (ie catcher alle exceptions under) pga fare for spaghetti. Blæ.
             try {
                 # Se om denne personen har en wordpress-bruker basert på p_id
                 $user = null;
-                try { 
+                try {
                     $user = WordpressUser::loadByParticipant($person->getId());
-                }
-                catch (Exception $e) { 
+                } catch (Exception $e) {
                     # Ingen bruker, prøv å opprett èn i stedet.
                     # Vi prøver med 'deltaker_XX' som brukernavn, der participant
-                    $username = "deltaker_".$person->getId();
+                    $username = "deltaker_" . $person->getId();
                     $user = WriteUser::createParticipantUser($username, $person->getEpost(), $person->getFornavn(), $person->getEtternavn(), $person->getMobil(), $person->getId());
                     $user = WriteUser::save($user, false);
-                    $person->setAttr('ukmusers_status', 'success')->setAttr('ukmusers_message', "Opprettet ny bruker for ".$person->getNavn().".");
-                }
-                
-                # Har vi ikke fått bruker til nå gir vi opp:
-                if ( get_class($user) != WordpressUser::class ) {
-                    # Sett en advarsel om denne brukeren.
-                    $person->setAttr('ukmusers_status', 'danger')->setAttr('ukmusers_message', "Klarte ikke å opprette arrangørsystem-bruker for ".$person->getNavn()." (id ".$person->getId().").");
-                    continue;
-                }
-                    
-                # Sjekk om brukeren er relatert til denne bloggen.
-                if ( !Blog::harBloggBruker(get_current_blog_id(), $user) ) {
-                    # Brukeren mangler relasjon til bloggen eller er inaktiv, prøv å legg den til.
-                    Blog::leggTilBruker(get_current_blog_id(), $user->getId(), User::getRolleForInnslagType( $innslag->getType() ) );
-                    $person->setAttr('ukmusers_status', 'success')->setAttr('ukmusers_message', "Koblet brukeren til bloggen.");
+                    $person->setAttr('ukmusers_status', 'success')->setAttr('ukmusers_message', "Opprettet ny bruker for " . $person->getNavn() . ".");
                 }
 
-                # Mangler vi fortsatt relasjon til bloggen, gir vi opp:
-                if( !Blog::harBloggBruker(get_current_blog_id(), $user) ) {
-                    $person->setAttr('ukmusers_status', 'danger')->setAttr('ukmusers_message', "Klarte ikke å koble arrangørsystem-brukeren til  ".$person->getNavn().". Kontakt support.");
+                # Har vi ikke fått bruker til nå gir vi opp:
+                if (get_class($user) != WordpressUser::class) {
+                    # Sett en advarsel om denne brukeren.
+                    $person->setAttr('ukmusers_status', 'danger')->setAttr('ukmusers_message', "Klarte ikke å opprette arrangørsystem-bruker for " . $person->getNavn() . " (id " . $person->getId() . ").");
                     continue;
                 }
-                
-                if( WordpressUser::erAktiv($user->getId()) ) {
+
+                if (WordpressUser::erAktiv($user->getId())) {
                     # Alt er OK og vi kan gå til neste i listen.
                     continue;
                 }
-    
+
                 # Hvis brukeren ikke er aktiv prøver vi å aktivere den ( de fleste brukerne er blitt deaktivert av Marius :'( )
                 WriteUser::aktiver($user);
                 WriteUser::save($user);
                 // Hvis vi lagret OK, er brukeren klar til bruk. Wohoo!
-                $person->setAttr('ukmusers_status', 'success')->setAttr('ukmusers_message', 'Bruker '.$person->getId().' (wp_id '.$user->getId().') lagt til blogg '.get_current_blog_id().' med rolle '.$rolle.'.');
+                #$person->setAttr('ukmusers_status', 'success')->setAttr('ukmusers_message', 'Bruker '.$person->getId().' (wp_id '.$user->getId().') lagt til blogg '.get_current_blog_id().' med rolle '.$rolle.'.');
             } catch (Exception $e) {
-                $person->setAttr('ukmusers_status', 'danger')->setAttr('ukmusers_message', 'Klarte ikke å opprette Wordpress-bruker for '.$person->getNavn().' (id: '.$person->getId().'.');
+                $person->setAttr('ukmusers_status', 'danger')->setAttr('ukmusers_message', 'Klarte ikke å opprette Wordpress-bruker for ' . $person->getNavn() . ' (id: ' . $person->getId() . '.');
                 continue;
             }
-        }        
+        }
 
         return $filtrerteInnslag;
     }
@@ -220,16 +200,18 @@ class UKMusers extends UKMWPmodul {
  * @param string $password
  * @return bool|WP_User a WP_User object if the username matched an existing user, or false if it didn't
  */
-function allow_programmatic_login( $user, $username, $password ) {
-    return get_user_by( 'login', $username );
+function allow_programmatic_login($user, $username, $password)
+{
+    return get_user_by('login', $username);
 }
 
-UKMusers::init( __DIR__ );
+UKMusers::init(__DIR__);
 ## HOOK MENU AND SCRIPTS
-if(is_admin()) {
+if (is_admin()) {
     UKMusers::hook();
 }
 
-function UKMusers_brukere_admin() {
+function UKMusers_brukere_admin()
+{
     UKMusers::administrerDeltaBrukere();
 }

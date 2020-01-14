@@ -1,27 +1,26 @@
 <?php
+
 use UKMNorge\Arrangement\Arrangement;
 use UKMNorge\Wordpress\User;
 use UKMNorge\Wordpress\WriteUser;
 
 $arrangement = new Arrangement(get_option('pl_id'));
-static::addViewData( 'filtrerteInnslag', static::createLoginsForParticipantsInArrangement($arrangement) );
+UKMusers::addViewData('filtrerteInnslag', UKMusers::createLoginsForParticipantsInArrangement($arrangement));
+UKMusers::addViewData('blog_id', get_current_blog_id());
 
-if( isset($_GET['subaction']) && isset($_POST['wp_bruker_id']) ) {
-    if( $_GET['subaction'] == "upgrade") {
-        # Oppgrader brukeren
-        $user = new User($_POST['wp_bruker_id']);
-        try {
-            WriteUser::upgradeUser($user);
-        } catch( Exception $e ) {
-            static::addFlash('danger', "Klarte ikke å oppgradere ".$user->getNavn());
-        }
-    } elseif( $_GET['subaction'] == "downgrade" ) {
-        # Nedgrader brukeren
-        $user = new User($_POST['wp_bruker_id']);
-        try {
-            WriteUser::downgradeUser($user);
-        } catch( Exception $e ) {
-            static::addFlash('danger', "Klarte ikke å nedgradere ".$user->getNavn());
-        }
+if (isset($_GET['subaction']) ) {#} && isset($_GET['wp_bruker_id'])) {
+    switch ($_GET['subaction']) {
+        case 'add':
+            UKMusers::include('controller/add.controller.php');
+        break;
+        case 'remove':
+            UKMusers::include('controller/remove.controller.php');
+        break;
+        case 'upgrade':
+            UKMusers::include('controller/upgrade.controller.php');
+        break;
+        case 'downgrade':
+            UKMusers::include('controller/downgrade.controller.php');
+        break;
     }
 }
