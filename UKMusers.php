@@ -154,12 +154,21 @@ class UKMusers extends UKMWPmodul
                 try {
                     $user = WordpressUser::loadByParticipant($person->getId());
                 } catch (Exception $e) {
-                    # Ingen bruker, prøv å opprett èn i stedet.
-                    # Vi prøver med 'deltaker_XX' som brukernavn, der participant
-                    $username = "deltaker_" . $person->getId();
-                    $user = WriteUser::createParticipantUser($username, $person->getEpost(), $person->getFornavn(), $person->getEtternavn(), $person->getMobil(), $person->getId());
-                    $user = WriteUser::save($user, false);
-                    $person->setAttr('ukmusers_status', 'success')->setAttr('ukmusers_message', "Opprettet ny bruker for " . $person->getNavn() . ".");
+                    try {
+                        if( empty( $person->getEpost() ) ) {
+                            throw $e;
+                        }
+                        $user = WordpressUser::loadByEmail( $person->getEpost() );
+                        throw new Exception('Oh, noe mangler. UKM Norge jobber med det.');
+                        // HVOR SKAL DENNE LAGRES?
+                    } catch( Exception $another_e ) {
+                        # Ingen bruker, prøv å opprett èn i stedet.
+                        # Vi prøver med 'deltaker_XX' som brukernavn, der participant
+                        $username = "deltaker_" . $person->getId();
+                        $user = WriteUser::createParticipantUser($username, $person->getEpost(), $person->getFornavn(), $person->getEtternavn(), $person->getMobil(), $person->getId());
+                        $user = WriteUser::save($user, false);
+                        $person->setAttr('ukmusers_status', 'success')->setAttr('ukmusers_message', "Opprettet ny bruker for " . $person->getNavn() . ".");
+                    }
                 }
 
                 # Har vi ikke fått bruker til nå gir vi opp:
