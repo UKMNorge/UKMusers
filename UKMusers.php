@@ -159,8 +159,7 @@ class UKMusers extends UKMWPmodul
                             throw $e;
                         }
                         $user = WordpressUser::loadByEmail( $person->getEpost() );
-                        throw new Exception('Oh, noe mangler. UKM Norge jobber med det.');
-                        // HVOR SKAL DENNE LAGRES?
+                        WriteUser::linkWpParticipant( $user->getId(), $person->getId() );
                     } catch( Exception $another_e ) {
                         # Ingen bruker, prøv å opprett èn i stedet.
                         # Vi prøver med 'deltaker_XX' som brukernavn, der participant
