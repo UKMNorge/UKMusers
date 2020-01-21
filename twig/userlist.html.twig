@@ -4,20 +4,22 @@
 			<h2>Deltakeres tilgang til ditt arrangørsystem</h2>
 			{% include "wp_modul.flashbag.html.twig" %}
 			<p>
-				Du velger selv hvem, om noen, av dine deltakere skal ha tilgang til å logge inn.
-                Kun media- og arrangørdeltakere kan få tilgang.
-			    Etter du har gitt de tilgang, kan de logge inn fra samme sted som de meldte seg på
+				Som administrator kan du gi deltakere i kategoriene «media» og «arrangør» mulighet til å logge inn i systemet. 
+                Når du gir dem tilgang kan de logge inn samme sted som de meldte seg på, 
                 (<a href="https://delta.{{ UKM_HOSTNAME }}/">https://delta.{{ UKM_HOSTNAME }}/</a>),
-                hvor de trykker på knappen "Logg inn til arrangørsystemet".
+                ved å trykke på knappen "Logg inn til arrangørsystemet".
 			</p>
+            <p>
+                Du kan når som helst nedgradere og fjerne tilgang.
+            </p>
 		</div>
 		<div class="col-xs-12 col-sm-6">
 			<h4>Arrangørdeltakere</h4>
 			<p>
-				Arrangørdeltakere har tilgang til rapporter, som vil si
-                lesetilgang, uten mulighet til å endre noe. 
-                Hvis du oppgraderer en arrangør-bruker, vil brukeren også få tilgang til "påmeldte" og "arrangement", 
-                som vil si at de kan endre informasjon på arrangementet ditt.
+				Når du gir arrangørdeltakere tilgang (blå knapp) kan de hente ut rapporter, 
+                det vil si uten mulighet til å endre noe. Hvis du oppgraderer tilgangen (grønn knapp) 
+                vil brukeren også få tilgang til "påmeldte" og "arrangement", 
+                dermed kan de også endre informasjon på arrangementet ditt. 
 			</p>
 			<ul class="list-group">
 				{% for innslag in filtrerteInnslag|filter( innslag => innslag.getType().getKey() == 'arrangor' ) %}
@@ -30,9 +32,9 @@
 		<div class="col-xs-12 col-sm-6">
 			<h4>Mediadeltakere</h4>
 			<p>
-				Mediadeltakerne har tilgang til å laste opp bilder, filmer, og å skrive nyhetsartikler 
-                OBS: en vanlig mediadeltaker har ikke tilgang til å publisere nyhetssakene; publisering krever en oppgradert bruker.
-                Oppgraderte brukere har tilgang til å publisere nyhetssaker, og kan redigere informasjonsteksten for arrangementet.
+				Når du gir mediadeltakere tilgang (blå knapp) kan de laste opp bilder, filmer og skrive nyhetsartikler. 
+                De har ikke tilgang til å publisere sakene. Publiseringsrettigheter krever at du oppgraderer tilgangen (grønn knapp). 
+                Oppgraderte brukere har tilgang til å publisere nyhetssaker og redigere informasjonsteksten for arrangementet. 
 			</p>
 			<ul class="list-group">
 				{% for innslag in filtrerteInnslag|filter( innslag => innslag.getType().getKey() != 'arrangor' ) %}
