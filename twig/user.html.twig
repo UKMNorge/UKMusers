@@ -1,0 +1,37 @@
+{% set person = innslag.getPersoner().getAll()|first %}
+<li class="list-group-item">
+	<div class="col-xs-8">
+		<h5>{{ person.getNavn() }}</h5>
+		<p>
+			{{ innslag.getType().getNavn() }}
+			|
+			{{ innslag.getKommune().getNavn() }}
+		</p>
+		{% if person.hasAttr('ukmusers_status') %}
+			<div class="alert alert-{{ person.getAttr('ukmusers_status') }}">
+				{{ person.getAttr('ukmusers_message') }}
+			</div>
+		{% endif %}
+	</div>
+	<div
+		class="col-xs-4" align="right">
+		{# Vis Oppgrader / Nedgrader-knappene om de har en faktisk bruker #}
+		{% if person.harWordpressBruker() %}
+			{% set wp_bruker = person.hentWordpressBruker() %}
+			{% set baseLink = '?page='~ GET('page') ~'&innslag='~ innslag.getId() %}
+			{# person er implisitt da dette er enkeltpersonInnslag &person={{person.getId()}}' %#}
+
+			{% if wp_bruker.harTilgangTilBlogg(blog_id) %}
+				<a href="{{baseLink}}&subaction=remove" class="btn btn-danger btn-sm btn-ukm">Fjern tilgang</a>
+				{% if not wp_bruker.erOppgradert() %}
+					<a href="{{baseLink}}&subaction=upgrade" class="btn btn-success btn-sm btn-ukm">Oppgrader</a>
+				{% else %}
+					<a href="{{baseLink}}&subaction=downgrade" class="btn btn-primary btn-sm btn-ukm">Nedgrader</a>
+				{% endif %}
+			{% else %}
+				<a href="{{baseLink}}&subaction=add" class="btn btn-primary btn-sm btn-ukm">Gi tilgang</a>
+			{% endif %}
+		{% endif %}
+	</div>
+	<div class="clearfix"></div>
+</li>
