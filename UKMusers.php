@@ -177,7 +177,19 @@ class UKMusers extends UKMWPmodul
                     continue;
                 }
 
-                if (WordpressUser::erAktiv($user->getId())) {
+                # Sjekk også at brukeren har en rolle på hoved-bloggen for å kunne se support-siden.
+                if ( !Blog::harHovedbloggBruker($user, 'subscriber') ) {
+                    # Brukeren mangler relasjon til bloggen eller er inaktiv, prøv å legg den til.
+                    Blog::leggTilHovedbloggBruker( $user );
+                    #$person->setAttr('ukmusers_status', 'success')->setAttr('ukmusers_message', "Koblet brukeren til hovedbloggen.");
+                }
+
+                # Mangler vi fortsatt relasjon til hovedbloggen, gir vi opp:
+                if( !Blog::harHovedbloggBruker( $user ) ) {
+                    $person->setAttr('ukmusers_status', 'danger')->setAttr('ukmusers_message', "På grunn av en feil, vil ikke brukeren kunne åpne 'Brukerstøtte'-siden. Kontakt support@ukm.no for hjelp.");
+                }
+
+                if( WordpressUser::erAktiv($user->getId()) ) {
                     # Alt er OK og vi kan gå til neste i listen.
                     continue;
                 }
