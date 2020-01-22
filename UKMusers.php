@@ -177,19 +177,6 @@ class UKMusers extends UKMWPmodul
                     continue;
                 }
 
-                # Sjekk om brukeren er relatert til denne bloggen.
-                if ( !Blog::harBloggBruker(get_current_blog_id(), $user) ) {
-                    # Brukeren mangler relasjon til bloggen eller er inaktiv, prøv å legg den til.
-                    Blog::leggTilBruker(get_current_blog_id(), $user->getId(), WordpressUser::getRolleForInnslagType( $innslag->getType() ) );
-                    $person->setAttr('ukmusers_status', 'success')->setAttr('ukmusers_message', "Koblet brukeren til bloggen.");
-                }
-
-                # Mangler vi fortsatt relasjon til bloggen, gir vi opp:
-                if( !Blog::harBloggBruker(get_current_blog_id(), $user) ) {
-                    $person->setAttr('ukmusers_status', 'danger')->setAttr('ukmusers_message', "Klarte ikke å koble arrangørsystem-brukeren til  ".$person->getNavn().". Kontakt support.");
-                    continue;
-                }
-                
                 # Sjekk også at brukeren har en rolle på hoved-bloggen for å kunne se support-siden.
                 if ( !Blog::harHovedbloggBruker($user, 'subscriber') ) {
                     # Brukeren mangler relasjon til bloggen eller er inaktiv, prøv å legg den til.
