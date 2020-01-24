@@ -186,7 +186,7 @@ class UKMusers extends UKMWPmodul
 
                 # Mangler vi fortsatt relasjon til hovedbloggen, gir vi opp:
                 if( !Blog::harHovedbloggBruker( $user ) ) {
-                    $person->setAttr('ukmusers_status', 'danger')->setAttr('ukmusers_message', "På grunn av en feil, vil ikke brukeren kunne åpne 'Brukerstøtte'-siden. Kontakt support@ukm.no for hjelp.");
+                    #$person->setAttr('ukmusers_status', 'danger')->setAttr('ukmusers_message', "På grunn av en feil, vil ikke brukeren kunne åpne 'Brukerstøtte'-siden. Kontakt support@ukm.no for hjelp.");
                 }
 
                 if( WordpressUser::erAktiv($user->getId()) ) {
