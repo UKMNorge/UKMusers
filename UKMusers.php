@@ -20,11 +20,9 @@ use UKMNorge\Innslag\Personer\Person;
 use UKMNorge\Wordpress\Blog;
 use UKMNorge\Wordpress\WriteUser;
 use UKMNorge\Innslag\Typer\Type;
+use UKMNorge\Wordpress\Modul;
 
-#require_once('UKMuser.class.php');
-require_once('UKM/wp_modul.class.php');
-
-class UKMusers extends UKMWPmodul
+class UKMusers extends Modul
 {
     public static $action = 'userlist';
     public static $path_plugin = null;
@@ -32,6 +30,7 @@ class UKMusers extends UKMWPmodul
     public static function hook()
     {
         add_action('admin_menu', ['UKMusers', 'meny'], 300);
+        add_action('wp_ajax_UKMusers_ajax', [static::class, 'ajax']);
     }
 
     public static function meny()
@@ -50,6 +49,16 @@ class UKMusers extends UKMWPmodul
             'admin_print_styles-' . $page_deltakerbruker,
             ['UKMusers', 'scriptsandstyles']
         );
+
+        add_action(
+            'admin_print_styles-users.php',
+            ['UKMusers','usersScripts']
+        );
+    }
+
+    public static function usersScripts() {
+        wp_enqueue_script('UKMusers_js', str_replace('http://','https://', WP_PLUGIN_URL) . '/UKMusers/UKMusers.js' );
+        static::scriptsandstyles();
     }
 
     public static function scriptsandstyles()
