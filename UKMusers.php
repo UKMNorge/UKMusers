@@ -57,7 +57,7 @@ class UKMusers extends Modul
     }
 
     public static function usersScripts() {
-        wp_enqueue_script('UKMusers_js', PLUGIN_PATH . '/UKMusers/UKMusers.js' );
+        wp_enqueue_script('UKMusers_js', str_replace('http://','https://', WP_PLUGIN_URL) . '/UKMusers/UKMusers.js' );
         static::scriptsandstyles();
     }
 
