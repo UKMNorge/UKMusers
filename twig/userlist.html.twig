@@ -1,31 +1,44 @@
+{% set harDeltakere = filtrerteInnslag|filter( innslag => innslag.getType().getKey() == 'arrangor')|length > 0 or filtrerteInnslag|filter( innslag => innslag.getType().getKey() != 'arrangor')|length > 0 %}
+
+
 <div class="container-fluid">
 	<div class="row">
 		<div class="col-xs-12">
-			<h2>Deltakeres tilgang til ditt arrangørsystem</h2>
+			<h2>Deltakeres tilgang til ditt arrangementsystem</h2>
 			{% include "wp_modul.flashbag.html.twig" %}
-			<p>
-				Som administrator kan du gi deltakere i kategoriene «media» og «arrangør» mulighet til å logge inn i systemet. 
-                Når du gir dem tilgang kan de logge inn samme sted som de meldte seg på, 
-                (<a href="https://delta.{{ UKM_HOSTNAME }}/">https://delta.{{ UKM_HOSTNAME }}/</a>),
-                ved å trykke på knappen "Logg inn til arrangørsystemet".
+			<p class="lead">
+				Her kan du velge å gi media- eller arrangørdeltakere mulighet å logge inn i Arrangementsystemet, for eksempel for å hente ut rapporter, laste opp bilder eller legge ut nyheter.
 			</p>
             <p>
-                Du kan når som helst nedgradere og fjerne tilgang.
+                Du kan når som helst fjerne eller endre tilgangen til deltakerne.
             </p>
+		
+			<ul>
+			{% if harDeltakere %}
+				<li class="list-group-item">OBS: deltakerne logge in fra <a href="https://delta.{{ UKM_HOSTNAME }}">din side</a> (samme sted som de melder seg på).</li>
+			{% else %}
+				<li class="list-group-item">Du har ingen påmeldte deltakere i media eller arrangør. <a href="?page=UKMdeltakere">Meld på deltaker</a></li>
+			{% endif %}
+				
+			</ul>
 		</div>
+
+		{% if harDeltakere %}
 		<div class="col-xs-12 col-sm-6">
 			<h4>Arrangørdeltakere</h4>
 			<p>
 				Når du gir arrangørdeltakere tilgang (blå knapp) kan de hente ut rapporter, 
-                det vil si uten mulighet til å endre noe. Hvis du oppgraderer tilgangen (grønn knapp) 
-                vil brukeren også få tilgang til "påmeldte" og "arrangement", 
-                dermed kan de også endre informasjon på arrangementet ditt. 
+				det vil si uten mulighet til å endre noe. Hvis du oppgraderer tilgangen (grønn knapp) 
+				vil brukeren også få tilgang til "påmeldte" og "arrangement", 
+				dermed kan de også endre informasjon på arrangementet ditt. 
 			</p>
 			<ul class="list-group">
 				{% for innslag in filtrerteInnslag|filter( innslag => innslag.getType().getKey() == 'arrangor' ) %}
 					{% include "user.html.twig" %}
 				{% else %}
-					Du har ingen påmeldte arrangørdeltakere.
+					<ul>
+						<li class="list-group-item">Du har ingen påmeldte arrangør-deltakere. <a href="?page=UKMdeltakere">Meld på deltaker</a></li>
+					</ul>		
 				{% endfor %}
 			</ul>
 		</div>
@@ -40,9 +53,13 @@
 				{% for innslag in filtrerteInnslag|filter( innslag => innslag.getType().getKey() != 'arrangor' ) %}
 					{% include "user.html.twig" %}
 				{% else %}
-					Du har ingen påmeldte mediadeltakere.
+					<ul>
+						<li class="list-group-item">Du har ingen påmeldte media-deltakere. <a href="?page=UKMdeltakere">Meld på deltaker</a></li>
+					</ul>
 				{% endfor %}
 			</ul>
 		</div>
+		{% endif %}
+
 	</div>
 </div>
